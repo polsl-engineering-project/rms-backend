@@ -15,7 +15,8 @@ public abstract class ContainersEnvironment {
             new PostgreSQLContainer<>("postgres:15")
                     .withDatabaseName("rms_test_db")
                     .withUsername("rms_test_user")
-                    .withPassword("rms_test_password");
+                    .withPassword("rms_test_password")
+                    .withReuse(true);
 
     @BeforeAll
     static void beforeAll() {
