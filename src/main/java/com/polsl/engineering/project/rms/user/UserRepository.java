@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -41,4 +42,16 @@ interface UserRepository extends JpaRepository<User, UUID> {
             WHERE u.username = :username
             """)
     boolean existsByUsername(@Param("username") String username);
+
+    @Query("""
+            SELECT u
+            FROM User u
+            WHERE u.username = :username AND u.password = :password
+            """)
+    Optional<User> findByUsernameAndPassword(
+            @Param("username") String username,
+            @Param("password") String password
+    );
+
+
 }

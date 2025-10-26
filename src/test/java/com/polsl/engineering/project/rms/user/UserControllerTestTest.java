@@ -1,5 +1,6 @@
 package com.polsl.engineering.project.rms.user;
 
+import com.polsl.engineering.project.rms.security.jwt.JwtService;
 import com.polsl.engineering.project.rms.user.dto.CreateUserRequest;
 import com.polsl.engineering.project.rms.user.dto.UpdateUserRequest;
 import com.polsl.engineering.project.rms.user.dto.UserResponse;
@@ -33,6 +34,9 @@ class UserControllerTestTest {
 
     @MockitoBean
     UserService userService;
+
+    @MockitoBean
+    JwtService jwtService;
 
     private static final String NULL_TOKEN = "__NULL__";
 

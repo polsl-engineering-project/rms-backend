@@ -1,5 +1,6 @@
 package com.polsl.engineering.project.rms.common.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
@@ -21,12 +22,25 @@ class SwaggerConfig {
 
     @Bean
     OpenAPI openAPI() {
+        var components = new Components();
+        addSecuritySchema(components);
+
         return new OpenAPI()
                 .info(new Info()
                         .title("Restaurant Management System API")
                         .description("API documentation for the Restaurant Management System")
                         .version("1.0.0")
-                );
+                ).components(components);
+    }
+
+    private static void addSecuritySchema(Components components) {
+        components.addSecuritySchemes(
+                "Bearer auth",
+                new io.swagger.v3.oas.models.security.SecurityScheme()
+                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")
+        );
     }
 
 }

@@ -20,4 +20,7 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
+jwt.key: ${JWT_KEY:jP@FxBg)+q#grgA$$ESnfBNnmZrgY%P#Z2I)DMRvGa!W%xpcnFuIDj^MW)LX!!Hg}
+jwt.expirationMillis: ${JWT_LIFETIME:3600000}
+
 springdoc.swagger-ui.path: /swagger-ui.html
