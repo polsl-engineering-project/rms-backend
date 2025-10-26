@@ -126,26 +126,26 @@ class UserControllerTestTest {
                     // username
                     Arguments.of("username null", create.toBuilder().username(null).build()),
                     Arguments.of("username blank", create.toBuilder().username("   ").build()),
-                    Arguments.of("username too short", create.toBuilder().username(tooShort(User.USERNAME_MIN_LENGTH, 'u')).build()),
-                    Arguments.of("username too long", create.toBuilder().username(tooLong(User.USERNAME_MAX_LENGTH, 'u')).build()),
+                    Arguments.of("username too short", create.toBuilder().username(tooShort(UserConstraints.USERNAME_MIN_LENGTH, 'u')).build()),
+                    Arguments.of("username too long", create.toBuilder().username(tooLong(UserConstraints.USERNAME_MAX_LENGTH, 'u')).build()),
 
                     // firstName
                     Arguments.of("firstName null", create.toBuilder().firstName(null).build()),
                     Arguments.of("firstName blank", create.toBuilder().firstName("   ").build()),
-                    Arguments.of("firstName too short", create.toBuilder().firstName(tooShort(User.FIRST_NAME_MIN_LENGTH, 'f')).build()),
-                    Arguments.of("firstName too long", create.toBuilder().firstName(tooLong(User.FIRST_NAME_MAX_LENGTH, 'f')).build()),
+                    Arguments.of("firstName too short", create.toBuilder().firstName(tooShort(UserConstraints.FIRST_NAME_MIN_LENGTH, 'f')).build()),
+                    Arguments.of("firstName too long", create.toBuilder().firstName(tooLong(UserConstraints.FIRST_NAME_MAX_LENGTH, 'f')).build()),
 
                     // lastName
                     Arguments.of("lastName null", create.toBuilder().lastName(null).build()),
                     Arguments.of("lastName blank", create.toBuilder().lastName("   ").build()),
-                    Arguments.of("lastName too short", create.toBuilder().lastName(tooShort(User.LAST_NAME_MIN_LENGTH, 'l')).build()),
-                    Arguments.of("lastName too long", create.toBuilder().lastName(tooLong(User.LAST_NAME_MAX_LENGTH, 'l')).build()),
+                    Arguments.of("lastName too short", create.toBuilder().lastName(tooShort(UserConstraints.LAST_NAME_MIN_LENGTH, 'l')).build()),
+                    Arguments.of("lastName too long", create.toBuilder().lastName(tooLong(UserConstraints.LAST_NAME_MAX_LENGTH, 'l')).build()),
 
                     // phoneNumber
                     Arguments.of("phoneNumber null", create.toBuilder().phoneNumber(null).build()),
                     Arguments.of("phoneNumber blank", create.toBuilder().phoneNumber("   ").build()),
-                    Arguments.of("phoneNumber too short", create.toBuilder().phoneNumber(tooShort(User.PHONE_NUMBER_MIN_LENGTH, '9')).build()),
-                    Arguments.of("phoneNumber too long", create.toBuilder().phoneNumber(tooLong(User.PHONE_NUMBER_MAX_LENGTH, '9')).build()),
+                    Arguments.of("phoneNumber too short", create.toBuilder().phoneNumber(tooShort(UserConstraints.PHONE_NUMBER_MIN_LENGTH, '9')).build()),
+                    Arguments.of("phoneNumber too long", create.toBuilder().phoneNumber(tooLong(UserConstraints.PHONE_NUMBER_MAX_LENGTH, '9')).build()),
 
                     // role
                     Arguments.of("role null", create.toBuilder().role(null).build())
@@ -154,8 +154,8 @@ class UserControllerTestTest {
             var password = Stream.of(
                     Arguments.of("password null", create.toBuilder().password(null).build()),
                     Arguments.of("password blank", create.toBuilder().password("   ").build()),
-                    Arguments.of("password too short", create.toBuilder().password(tooShort(User.PASSWORD_MIN_LENGTH, 'p')).build()),
-                    Arguments.of("password too long", create.toBuilder().password(tooLong(User.PASSWORD_MAX_LENGTH, 'p')).build())
+                    Arguments.of("password too short", create.toBuilder().password(tooShort(UserConstraints.PASSWORD_MIN_LENGTH, 'p')).build()),
+                    Arguments.of("password too long", create.toBuilder().password(tooLong(UserConstraints.PASSWORD_MAX_LENGTH, 'p')).build())
             );
 
             return Stream.concat(common, password);
@@ -164,26 +164,26 @@ class UserControllerTestTest {
                     // username
                     Arguments.of("username null", update.toBuilder().username(null).build()),
                     Arguments.of("username blank", update.toBuilder().username("   ").build()),
-                    Arguments.of("username too short", update.toBuilder().username(tooShort(User.USERNAME_MIN_LENGTH, 'u')).build()),
-                    Arguments.of("username too long", update.toBuilder().username(tooLong(User.USERNAME_MAX_LENGTH, 'u')).build()),
+                    Arguments.of("username too short", update.toBuilder().username(tooShort(UserConstraints.USERNAME_MIN_LENGTH, 'u')).build()),
+                    Arguments.of("username too long", update.toBuilder().username(tooLong(UserConstraints.USERNAME_MAX_LENGTH, 'u')).build()),
 
                     // firstName
                     Arguments.of("firstName null", update.toBuilder().firstName(null).build()),
                     Arguments.of("firstName blank", update.toBuilder().firstName("   ").build()),
-                    Arguments.of("firstName too short", update.toBuilder().firstName(tooShort(User.FIRST_NAME_MIN_LENGTH, 'f')).build()),
-                    Arguments.of("firstName too long", update.toBuilder().firstName(tooLong(User.FIRST_NAME_MAX_LENGTH, 'f')).build()),
+                    Arguments.of("firstName too short", update.toBuilder().firstName(tooShort(UserConstraints.FIRST_NAME_MIN_LENGTH, 'f')).build()),
+                    Arguments.of("firstName too long", update.toBuilder().firstName(tooLong(UserConstraints.FIRST_NAME_MAX_LENGTH, 'f')).build()),
 
                     // lastName
                     Arguments.of("lastName null", update.toBuilder().lastName(null).build()),
                     Arguments.of("lastName blank", update.toBuilder().lastName("   ").build()),
-                    Arguments.of("lastName too short", update.toBuilder().lastName(tooShort(User.LAST_NAME_MIN_LENGTH, 'l')).build()),
-                    Arguments.of("lastName too long", update.toBuilder().lastName(tooLong(User.LAST_NAME_MAX_LENGTH, 'l')).build()),
+                    Arguments.of("lastName too short", update.toBuilder().lastName(tooShort(UserConstraints.LAST_NAME_MIN_LENGTH, 'l')).build()),
+                    Arguments.of("lastName too long", update.toBuilder().lastName(tooLong(UserConstraints.LAST_NAME_MAX_LENGTH, 'l')).build()),
 
                     // phoneNumber
                     Arguments.of("phoneNumber null", update.toBuilder().phoneNumber(null).build()),
                     Arguments.of("phoneNumber blank", update.toBuilder().phoneNumber("   ").build()),
-                    Arguments.of("phoneNumber too short", update.toBuilder().phoneNumber(tooShort(User.PHONE_NUMBER_MIN_LENGTH, '9')).build()),
-                    Arguments.of("phoneNumber too long", update.toBuilder().phoneNumber(tooLong(User.PHONE_NUMBER_MAX_LENGTH, '9')).build()),
+                    Arguments.of("phoneNumber too short", update.toBuilder().phoneNumber(tooShort(UserConstraints.PHONE_NUMBER_MIN_LENGTH, '9')).build()),
+                    Arguments.of("phoneNumber too long", update.toBuilder().phoneNumber(tooLong(UserConstraints.PHONE_NUMBER_MAX_LENGTH, '9')).build()),
 
                     // role
                     Arguments.of("role null", update.toBuilder().role(null).build())
