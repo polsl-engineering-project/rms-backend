@@ -3,5 +3,6 @@ package com.polsl.engineering.project.rms.security;
 import java.util.Optional;
 
 public interface UserPrincipalProvider {
-     Optional<UserPrincipal> getUserPrincipal(AuthenticationCredentials hashedPassword);
+     UserPrincipal getUserPrincipal(UserCredentials userCredentials);
+     Optional<UserCredentials> getUserCredentials(String username);
 }

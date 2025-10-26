@@ -3,9 +3,9 @@ package com.polsl.engineering.project.rms.user;
 import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParamsException;
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.security.UserCredentials;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.security.UserPrincipalProvider;
-import com.polsl.engineering.project.rms.security.AuthenticationCredentials;
 import com.polsl.engineering.project.rms.user.dto.CreateUserRequest;
 import com.polsl.engineering.project.rms.user.dto.UpdateUserRequest;
 import com.polsl.engineering.project.rms.user.dto.UserResponse;
@@ -101,12 +101,14 @@ class UserService implements UserPrincipalProvider {
     }
 
     @Override
-    public Optional<UserPrincipal> getUserPrincipal(AuthenticationCredentials credentials) {
-        return repository.findByUsernameAndPassword(credentials.username(), credentials.encodedPassword())
-                .map(user -> new UserPrincipal(
-                        user.getId(),
-                        List.of(user.getRole().toUserPrincipalRole())
-                ));
+    public UserPrincipal getUserPrincipal(UserCredentials userCredentials){
+        return new UserPrincipal(userCredentials.id(), userCredentials.roles());
+    }
+
+    @Override
+    public Optional<UserCredentials> getUserCredentials(String username) {
+        return repository.findByUsername(username)
+                .map(user -> new UserCredentials(user.getId(), user.getPassword(),List.of(user.getRole().toUserPrincipalRole())));
     }
 
     private void validateRole(Role role) {

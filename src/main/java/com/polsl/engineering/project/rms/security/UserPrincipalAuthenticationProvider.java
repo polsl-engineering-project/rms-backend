@@ -23,12 +23,15 @@ public record UserPrincipalAuthenticationProvider(
             throw new NullCredentialsException();
         }
 
-        var hashedPassword = passwordEncoder.encode(authentication.getCredentials().toString());
-        var userPrincipal = principalProvider.getUserPrincipal(
-                new AuthenticationCredentials(authentication.getName(), hashedPassword)
-        ).orElseThrow(InvalidCredentialsException::new);
+        var rawPassword = authentication.getCredentials().toString();
+        var user = principalProvider.getUserCredentials(authentication.getName())
+                .orElseThrow(InvalidCredentialsException::new);
 
-        return new UserPrincipalAuthenticationToken(userPrincipal);
+        if(!passwordEncoder.matches(rawPassword, user.hashedPassword())){
+            throw new InvalidCredentialsException();
+        }
+
+        return new UserPrincipalAuthenticationToken(principalProvider.getUserPrincipal(user));
     }
 
     @Override

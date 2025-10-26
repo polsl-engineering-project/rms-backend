@@ -39,11 +39,14 @@ class UserPrincipalAuthenticationProviderTest {
         var rawPassword = "s3cr3t";
         var encodedPassword = "{bcrypt}hash";
         var roles = List.of(UserPrincipal.Role.ADMIN, UserPrincipal.Role.MANAGER);
-        var expectedPrincipal = new UserPrincipal(UUID.randomUUID(), roles);
+        var userCredentials = new UserCredentials(UUID.randomUUID(), encodedPassword, roles);
+        var expectedPrincipal = new UserPrincipal(userCredentials.id(), userCredentials.roles());
 
-        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
-        when(principalProvider.getUserPrincipal(any(AuthenticationCredentials.class)))
-                .thenReturn(Optional.of(expectedPrincipal));
+        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
+        when(principalProvider.getUserCredentials(any()))
+                .thenReturn(Optional.of(userCredentials));
+        when(principalProvider.getUserPrincipal(any()))
+                .thenReturn(expectedPrincipal);
 
         var input = new UsernamePasswordAuthenticationToken(username, rawPassword);
 
@@ -63,14 +66,15 @@ class UserPrincipalAuthenticationProviderTest {
                 );
 
         // And verify interactions and passed credentials
-        var captor = ArgumentCaptor.forClass(AuthenticationCredentials.class);
-        verify(passwordEncoder).encode(rawPassword);
+        var captor = ArgumentCaptor.forClass(UserCredentials.class);
+        verify(passwordEncoder).matches(rawPassword, encodedPassword);
         verify(principalProvider).getUserPrincipal(captor.capture());
         verifyNoMoreInteractions(passwordEncoder, principalProvider);
 
         var passedCredentials = captor.getValue();
-        assertThat(passedCredentials.username()).isEqualTo(username);
-        assertThat(passedCredentials.encodedPassword()).isEqualTo(encodedPassword);
+        assertThat(passedCredentials.id()).isEqualTo(userCredentials.id());
+        assertThat(passedCredentials.hashedPassword()).isEqualTo(encodedPassword);
+        assertThat(passedCredentials.roles()).containsExactlyInAnyOrderElementsOf(roles);
     }
 
     @Test
@@ -115,8 +119,7 @@ class UserPrincipalAuthenticationProviderTest {
         var username = "john.doe";
         var rawPassword = "bad-pass";
         var encodedPassword = "encoded-bad";
-        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
-        when(principalProvider.getUserPrincipal(new AuthenticationCredentials(username, encodedPassword)))
+        when(principalProvider.getUserCredentials(username))
                 .thenReturn(Optional.empty());
 
         var input = new UsernamePasswordAuthenticationToken(username, rawPassword);
@@ -128,8 +131,7 @@ class UserPrincipalAuthenticationProviderTest {
         assertThatThrownBy(call)
                 .isInstanceOf(InvalidCredentialsException.class);
 
-        verify(passwordEncoder).encode(rawPassword);
-        verify(principalProvider).getUserPrincipal(new AuthenticationCredentials(username, encodedPassword));
+        verify(principalProvider).getUserCredentials(username);
         verifyNoMoreInteractions(passwordEncoder, principalProvider);
     }
 

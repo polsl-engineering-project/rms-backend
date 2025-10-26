@@ -46,11 +46,10 @@ interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
             SELECT u
             FROM User u
-            WHERE u.username = :username AND u.password = :password
+            WHERE u.username = :username
             """)
-    Optional<User> findByUsernameAndPassword(
-            @Param("username") String username,
-            @Param("password") String password
+    Optional<User> findByUsername(
+            @Param("username") String username
     );
 
 
