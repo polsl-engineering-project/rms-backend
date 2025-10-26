@@ -5,7 +5,7 @@ import com.polsl.engineering.project.rms.validation.constraint.NotNullAndTrimmed
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
-import static com.polsl.engineering.project.rms.user.User.*;
+import static com.polsl.engineering.project.rms.user.UserConstraints.*;
 
 @Builder(toBuilder = true)
 public record CreateUserRequest(

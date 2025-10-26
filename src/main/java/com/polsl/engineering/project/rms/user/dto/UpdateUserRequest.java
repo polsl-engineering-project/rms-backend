@@ -5,8 +5,7 @@ import com.polsl.engineering.project.rms.validation.constraint.NotNullAndTrimmed
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
-import static com.polsl.engineering.project.rms.user.User.*;
-import static com.polsl.engineering.project.rms.user.User.FIRST_NAME_MAX_LENGTH;
+import static com.polsl.engineering.project.rms.user.UserConstraints.*;
 
 @Builder(toBuilder = true)
 public record UpdateUserRequest(
