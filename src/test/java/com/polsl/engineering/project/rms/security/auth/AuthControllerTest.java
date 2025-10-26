@@ -1,5 +1,6 @@
 package com.polsl.engineering.project.rms.security.auth;
 
+import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
 import com.polsl.engineering.project.rms.security.auth.dto.LoginResponse;
 import com.polsl.engineering.project.rms.security.jwt.JwtService;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.stream.Stream;
 
@@ -36,6 +38,9 @@ class AuthControllerTest {
 
     @MockitoBean
     JwtService jwtService;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Test
     @DisplayName("Given valid LoginRequest When POST /api/v1/auth/login Then returns 200 with token JSON")
@@ -68,7 +73,7 @@ class AuthControllerTest {
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("invalidLoginPayloads")
     @DisplayName("Given invalid LoginRequest When POST /api/v1/auth/login Then returns 400 and service not invoked")
-    void GivenInvalidLoginRequest_WhenPostLogin_ThenReturns400AndServiceNotInvoked(String payload) throws Exception {
+    void GivenInvalidLoginRequest_WhenPostLogin_ThenReturns400AndServiceNotInvoked(String i, String payload, Integer detailSize, String errorMsg) throws Exception {
         // when
         ResultActions result = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,20 +81,24 @@ class AuthControllerTest {
 
         // then
         result.andExpect(status().isBadRequest());
+        ErrorResponse error = objectMapper.readValue(result.andReturn().getResponse().getContentAsString(), ErrorResponse.class);
+        assertThat(error.error()).isEqualTo(errorMsg);
+        assertThat(error.details().size()).isEqualTo(detailSize);
         verifyNoInteractions(authService);
     }
 
     static Stream<Arguments> invalidLoginPayloads() {
         return Stream.of(
-                Arguments.of("Missing both fields", createPayload("", "")),
-                Arguments.of("Missing username", createPayload("", "pw")),
-                Arguments.of("Missing password", createPayload("john", "")),
-                Arguments.of("Null username", createPayload("", "pw")),
-                Arguments.of("Null password", createPayload("john", "")),
-                Arguments.of("Empty username", createPayload("", "pw")),
-                Arguments.of("Empty password", createPayload("john", "")),
-                Arguments.of("Blank username", createPayload(" ", "pw")),
-                Arguments.of("Blank password", createPayload("john", " "))
+                Arguments.of("Missing both fields", createPayload("", ""), 2, "Validation failed"),
+                Arguments.of("Missing username", createPayload("", "pw"), 1, "Validation failed"),
+                Arguments.of("Missing password", createPayload("john", ""), 1, "Validation failed"),
+                Arguments.of("Null username", createPayload("", "pw"), 1, "Validation failed"),
+                Arguments.of("Null password", createPayload("john", ""), 1, "Validation failed"),
+                Arguments.of("Empty username", createPayload("", "pw"), 1, "Validation failed"),
+                Arguments.of("Empty password", createPayload("john", ""), 1, "Validation failed"),
+                Arguments.of("Blank username", createPayload(" ", "pw"), 1, "Validation failed"),
+                Arguments.of("Blank password", createPayload("john", " "), 1, "Validation failed"),
+                Arguments.of("Malformed JSON", "{\"username\":{{}", 0, "Malformed JSON")
         );
     }
 
