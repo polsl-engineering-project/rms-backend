@@ -4,8 +4,7 @@ import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParam
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.security.UserCredentials;
-import com.polsl.engineering.project.rms.security.UserPrincipal;
-import com.polsl.engineering.project.rms.security.UserPrincipalProvider;
+import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
 import com.polsl.engineering.project.rms.user.dto.CreateUserRequest;
 import com.polsl.engineering.project.rms.user.dto.UpdateUserRequest;
 import com.polsl.engineering.project.rms.user.dto.UserResponse;
@@ -24,7 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-class UserService implements UserPrincipalProvider {
+class UserService implements UserCredentialsProvider {
 
     private final UserRepository repository;
     private final UserMapper mapper;
@@ -98,11 +97,6 @@ class UserService implements UserPrincipalProvider {
         if (deletedCount == 0) {
             throw new ResourceNotFoundException("User with id " + strId + " not found");
         }
-    }
-
-    @Override
-    public UserPrincipal getUserPrincipal(UserCredentials userCredentials){
-        return new UserPrincipal(userCredentials.id(), userCredentials.roles());
     }
 
     @Override

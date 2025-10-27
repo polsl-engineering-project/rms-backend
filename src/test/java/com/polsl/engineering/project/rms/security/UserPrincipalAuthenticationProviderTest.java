@@ -28,13 +28,13 @@ class UserPrincipalAuthenticationProviderTest {
     PasswordEncoder passwordEncoder;
 
     @Mock
-    UserPrincipalProvider principalProvider;
+    UserCredentialsProvider credentialsProvider;
 
     @Test
     @DisplayName("Given valid UsernamePasswordAuthenticationToken When authenticate Then returns UserPrincipalAuthenticationToken with principal and authorities")
     void GivenValidUsernamePasswordToken_WhenAuthenticate_ThenReturnUserPrincipalAuthenticationToken() {
         // Given
-        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, principalProvider);
+        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, credentialsProvider);
         var username = "john.doe";
         var rawPassword = "s3cr3t";
         var encodedPassword = "{bcrypt}hash";
@@ -43,10 +43,8 @@ class UserPrincipalAuthenticationProviderTest {
         var expectedPrincipal = new UserPrincipal(userCredentials.id(), userCredentials.roles());
 
         when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
-        when(principalProvider.getUserCredentials(any()))
+        when(credentialsProvider.getUserCredentials(any()))
                 .thenReturn(Optional.of(userCredentials));
-        when(principalProvider.getUserPrincipal(any()))
-                .thenReturn(expectedPrincipal);
 
         var input = new UsernamePasswordAuthenticationToken(username, rawPassword);
 
@@ -64,24 +62,22 @@ class UserPrincipalAuthenticationProviderTest {
                 .containsExactlyInAnyOrderElementsOf(
                         roles.stream().map(GrantedAuthority::getAuthority).toList()
                 );
+        assertThat(userCredentials.toUserPrincipal()).isEqualTo(expectedPrincipal);
 
         // And verify interactions and passed credentials
-        var captor = ArgumentCaptor.forClass(UserCredentials.class);
+        var captor = ArgumentCaptor.forClass(String.class);
         verify(passwordEncoder).matches(rawPassword, encodedPassword);
-        verify(principalProvider).getUserPrincipal(captor.capture());
-        verifyNoMoreInteractions(passwordEncoder, principalProvider);
+        verify(credentialsProvider).getUserCredentials(captor.capture());
+        verifyNoMoreInteractions(passwordEncoder, credentialsProvider);
 
-        var passedCredentials = captor.getValue();
-        assertThat(passedCredentials.id()).isEqualTo(userCredentials.id());
-        assertThat(passedCredentials.hashedPassword()).isEqualTo(encodedPassword);
-        assertThat(passedCredentials.roles()).containsExactlyInAnyOrderElementsOf(roles);
+        assertThat(captor.getValue()).isEqualTo(username);
     }
 
     @Test
     @DisplayName("Given non UsernamePasswordAuthentication Authentication When authenticate Then throws IllegalArgumentException with message")
     void GivenNonUsernamePasswordAuthentication_WhenAuthenticate_ThenThrowIllegalArgumentException() {
         // Given
-        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, principalProvider);
+        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, credentialsProvider);
         var otherAuth = mock(Authentication.class);
 
         // When
@@ -92,14 +88,14 @@ class UserPrincipalAuthenticationProviderTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Unsupported authentication type");
 
-        verifyNoInteractions(passwordEncoder, principalProvider);
+        verifyNoInteractions(passwordEncoder, credentialsProvider);
     }
 
     @Test
     @DisplayName("Given UsernamePasswordAuthenticationToken with null credentials When authenticate Then throws NullCredentialsException")
     void GivenNullCredentials_WhenAuthenticate_ThenThrowNullCredentialsException() {
         // Given
-        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, principalProvider);
+        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, credentialsProvider);
         var input = new UsernamePasswordAuthenticationToken("john.doe", null);
 
         // When
@@ -109,17 +105,17 @@ class UserPrincipalAuthenticationProviderTest {
         assertThatThrownBy(call)
                 .isInstanceOf(NullCredentialsException.class);
 
-        verifyNoInteractions(passwordEncoder, principalProvider);
+        verifyNoInteractions(passwordEncoder, credentialsProvider);
     }
 
     @Test
     void GivenInvalidCredentials_WhenAuthenticate_ThenThrowInvalidCredentialsException() {
         // Given
-        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, principalProvider);
+        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, credentialsProvider);
         var username = "john.doe";
         var rawPassword = "bad-pass";
         var encodedPassword = "encoded-bad";
-        when(principalProvider.getUserCredentials(username))
+        when(credentialsProvider.getUserCredentials(username))
                 .thenReturn(Optional.empty());
 
         var input = new UsernamePasswordAuthenticationToken(username, rawPassword);
@@ -131,15 +127,15 @@ class UserPrincipalAuthenticationProviderTest {
         assertThatThrownBy(call)
                 .isInstanceOf(InvalidCredentialsException.class);
 
-        verify(principalProvider).getUserCredentials(username);
-        verifyNoMoreInteractions(passwordEncoder, principalProvider);
+        verify(credentialsProvider).getUserCredentials(username);
+        verifyNoMoreInteractions(passwordEncoder, credentialsProvider);
     }
 
     @Test
     @DisplayName("GIVEN authentication class WHEN supports THEN true for UsernamePasswordAuthenticationToken and false otherwise")
     void GivenAuthenticationClass_WhenSupports_ThenCorrectBooleanReturned() {
         // Given
-        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, principalProvider);
+        var provider = new UserPrincipalAuthenticationProvider(passwordEncoder, credentialsProvider);
 
         assertThat(provider.supports(UsernamePasswordAuthenticationToken.class)).isTrue();
         assertThat(provider.supports(Authentication.class)).isFalse();

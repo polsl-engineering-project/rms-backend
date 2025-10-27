@@ -10,4 +10,8 @@ public record UserCredentials(UUID id, String hashedPassword, List<UserPrincipal
         this.hashedPassword = hashedPassword;
         this.roles = Collections.unmodifiableList(roles);
     }
+
+    public UserPrincipal toUserPrincipal(){
+        return new UserPrincipal(id, roles);
+    }
 }

@@ -2,7 +2,6 @@ package com.polsl.engineering.project.rms.security;
 
 import java.util.Optional;
 
-public interface UserPrincipalProvider {
-     UserPrincipal getUserPrincipal(UserCredentials userCredentials);
+public interface UserCredentialsProvider {
      Optional<UserCredentials> getUserCredentials(String username);
 }

@@ -36,9 +36,9 @@ public class SecurityConfig {
     @Bean
     AuthenticationProvider authenticationProvider(
             PasswordEncoder passwordEncoder,
-            UserPrincipalProvider principalProvider
+            UserCredentialsProvider credentialsProvider
     ) {
-        return new UserPrincipalAuthenticationProvider(passwordEncoder, principalProvider);
+        return new UserPrincipalAuthenticationProvider(passwordEncoder, credentialsProvider);
     }
 
     @Bean

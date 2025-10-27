@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 public record UserPrincipalAuthenticationProvider(
         PasswordEncoder passwordEncoder,
-        UserPrincipalProvider principalProvider
+        UserCredentialsProvider credentialsProvider
 ) implements AuthenticationProvider {
 
     @Override
@@ -24,14 +24,14 @@ public record UserPrincipalAuthenticationProvider(
         }
 
         var rawPassword = authentication.getCredentials().toString();
-        var user = principalProvider.getUserCredentials(authentication.getName())
+        var user = credentialsProvider.getUserCredentials(authentication.getName())
                 .orElseThrow(InvalidCredentialsException::new);
 
         if(!passwordEncoder.matches(rawPassword, user.hashedPassword())){
             throw new InvalidCredentialsException();
         }
 
-        return new UserPrincipalAuthenticationToken(principalProvider.getUserPrincipal(user));
+        return new UserPrincipalAuthenticationToken(user.toUserPrincipal());
     }
 
     @Override
