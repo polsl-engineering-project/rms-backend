@@ -27,7 +27,7 @@ public record UserPrincipal(UUID id, List<Role> roles) implements Principal {
 
         public static Optional<Role> safeValueOf(String roleName) {
             try {
-                return Optional.of(Role.valueOf(roleName));
+                return Optional.of(Role.valueOf(roleName.replace("ROLE_", "")));
             } catch (IllegalArgumentException _) {
                 return Optional.empty();
             }
