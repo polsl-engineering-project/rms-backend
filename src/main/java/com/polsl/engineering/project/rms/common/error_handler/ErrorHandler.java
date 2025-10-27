@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +20,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = ex.getBindingResult()
+        var errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .collect(Collectors.toMap(
@@ -28,7 +29,7 @@ public class ErrorHandler {
                         (msg1, msg2) -> msg1
                 ));
 
-        ErrorResponse response = ErrorResponse.of(
+        var response = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation failed",
                 "Validation error occurred",
@@ -40,7 +41,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
-        Map<String, String> errors = ex.getConstraintViolations()
+        var errors = ex.getConstraintViolations()
                 .stream()
                 .collect(Collectors.toMap(
                         v -> v.getPropertyPath().toString(),
@@ -48,7 +49,7 @@ public class ErrorHandler {
                         (msg1, msg2) -> msg1
                 ));
 
-        ErrorResponse response = ErrorResponse.of(
+        var response = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Constraint violation",
                 "Validation error occurred",
@@ -60,7 +61,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        ErrorResponse response = ErrorResponse.of(
+        var response = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Malformed JSON",
                 "Request body is improperly formatted"
@@ -72,17 +73,23 @@ public class ErrorHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        var responseStatus = Optional.ofNullable(
+                ex.getClass().getAnnotation(ResponseStatus.class)
+        );
 
-        var annotation = ex.getClass().getAnnotation(org.springframework.web.bind.annotation.ResponseStatus.class);
-        if (annotation != null) {
-            status = annotation.value();
-        }
+        var status = responseStatus
+                .map(ResponseStatus::value)
+                .orElse(HttpStatus.INTERNAL_SERVER_ERROR);
 
-        ErrorResponse response = ErrorResponse.of(
+        var message = responseStatus.isPresent()
+                ? ex.getMessage()
+                : "Wystąpił nieoczekiwany błąd serwera.";
+        // jeśli wyjątek ma @ResponseStatus (nasz wyjątek) to wyświetlamy naszą wiadomość, jeśli wyjątek jest od Springa to wyświetlamy bezpieczną wiadomosć
+
+        var response = ErrorResponse.of(
                 status.value(),
                 status.getReasonPhrase(),
-                ex.getMessage()
+                message
         );
 
         return ResponseEntity.status(status).body(response);
