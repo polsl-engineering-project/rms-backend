@@ -1,8 +1,10 @@
 package com.polsl.engineering.project.rms.security.auth;
 
 import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
-import com.polsl.engineering.project.rms.security.auth.dto.LoginResponse;
+import com.polsl.engineering.project.rms.security.auth.dto.LoginRequest;
+import com.polsl.engineering.project.rms.security.auth.dto.TokenPair;
 import com.polsl.engineering.project.rms.security.jwt.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -21,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,25 +49,30 @@ class AuthControllerTest {
     @DisplayName("Given valid LoginRequest When POST /api/v1/auth/login Then returns 200 with token JSON")
     void GivenValidLoginRequest_WhenPostLogin_ThenReturns200WithTokenJson() throws Exception {
         // given
-        var expectedToken = "jwt-token-xyz";
+        var expectedAccessToken = "jwt-token-xyz";
+        var expectedRefreshToken = "jwt-refresh-token-xyz";
         var payload = createPayload("john", "p@ss");
 
-        when(authService.login(any())).thenReturn(new LoginResponse(expectedToken));
+        when(authService.login(any(), any())).thenReturn(new TokenPair(expectedAccessToken, expectedRefreshToken));
 
         // when
         ResultActions result = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload));
 
-        // then
+        // then body
         result.andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.token").value(expectedToken));
+                .andExpect(jsonPath("$.accessToken").value(expectedAccessToken));
+
+        // then cookie
+        result.andExpect(header().string("Set-Cookie", containsString("refresh_token=" + expectedRefreshToken)));
 
         // then (service interaction and payload mapping)
-        var captor = ArgumentCaptor.forClass(com.polsl.engineering.project.rms.security.auth.dto.LoginRequest.class);
-        verify(authService).login(captor.capture());
-        var captured = captor.getValue();
+        ArgumentCaptor<LoginRequest> requestCaptor = ArgumentCaptor.forClass(LoginRequest.class);
+        ArgumentCaptor<HttpServletRequest> requestCaptorHttp = ArgumentCaptor.forClass(HttpServletRequest.class);
+        verify(authService).login(requestCaptor.capture(), requestCaptorHttp.capture());
+        var captured = requestCaptor.getValue();
         assertThat(captured.username()).isEqualTo("john");
         assertThat(captured.password()).isEqualTo("p@ss");
         verifyNoMoreInteractions(authService);

@@ -1,6 +1,8 @@
 package com.polsl.engineering.project.rms.security;
 
+import com.auth0.jwt.algorithms.Algorithm;
 import com.polsl.engineering.project.rms.security.jwt.JwtFilter;
+import com.polsl.engineering.project.rms.security.jwt.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,21 +17,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Clock;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
-
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(x ->
                         x.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/login", "api/v1/auth/refresh").permitAll()
                         .requestMatchers("/swagger-ui*/**", "/v3/api-docs*/**").permitAll()
                         .requestMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()
@@ -54,6 +59,26 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecureRandom secureRandom() {
+        return new SecureRandom();
+    }
+
+    @Bean
+    public MessageDigest messageDigest() throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance("SHA-256");
+    }
+
+    @Bean
+    public Algorithm jwtAlgorithm(JwtProperties jwtProperties) {
+        return Algorithm.HMAC256(jwtProperties.key());
+    }
+
+    @Bean
+    public Clock systemClock() {
+        return Clock.systemUTC();
     }
 
 }

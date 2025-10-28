@@ -1,7 +1,5 @@
 package com.polsl.engineering.project.rms;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -16,20 +14,16 @@ public abstract class ContainersEnvironment {
                     .withDatabaseName("rms_test_db")
                     .withUsername("rms_test_user")
                     .withPassword("rms_test_password")
-                    .withReuse(true);
+                    .withReuse(false);
+                    // reuse na false, wtedy kontener sam kończy swój żywot autamatycznie po testach czyli po zamknięciu JVM
+                    // wtedy też nie możemy używać beforeAll i AfterAll bo kontener zamykał się po testach jednego Repository i dla drugiego Repository był już niedostępny
 
-    @BeforeAll
-    static void beforeAll() {
-        postgreSQLContainer.start();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        postgreSQLContainer.stop();
-    }
 
     @DynamicPropertySource
     static void registerDynamicProperties(org.springframework.test.context.DynamicPropertyRegistry registry) {
+        if (!postgreSQLContainer.isRunning()) {
+            postgreSQLContainer.start();
+        }
         registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);

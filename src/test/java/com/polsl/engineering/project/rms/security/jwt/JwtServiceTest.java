@@ -2,23 +2,35 @@ package com.polsl.engineering.project.rms.security.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
+import com.polsl.engineering.project.rms.security.auth.dto.TokenPair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.testcontainers.shaded.org.yaml.snakeyaml.tokens.Token;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
@@ -28,19 +40,33 @@ class JwtServiceTest {
 
     Clock clock;
     Algorithm algorithm;
-
     JwtService underTest;
+    MessageDigest messageDigest;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+    @Mock
+    private UserCredentialsProvider credentialsProvider;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws NoSuchAlgorithmException {
         clock = Clock.fixed(Instant.parse("2025-01-01T00:00:00Z"), ZoneOffset.UTC);
-        underTest = new JwtService(new JwtProperties(SECRET, EXPIRATION_MILLIS), clock);
         algorithm = Algorithm.HMAC256(SECRET);
+        messageDigest = MessageDigest.getInstance("SHA-256");
+        underTest = new JwtService(
+                new JwtProperties(SECRET, EXPIRATION_MILLIS),
+                algorithm,
+                clock,
+                refreshTokenRepository,
+                new SecureRandom(),
+                messageDigest,
+                credentialsProvider
+        );
     }
 
     @Test
     @DisplayName("Given authentication with roles When createJwt Then token contains subject roles and valid timestamps")
-    void GivenAuthenticationWithRoles_WhenCreateJwt_ThenTokenContainsSubjectRolesAndValidTimestamps() {
+    void GivenAuthenticationWithRoles_WhenCreateTokens_ThenTokenContainsSubjectRolesAndValidTimestamps() {
         // given
         UUID userId = UUID.randomUUID();
         List<GrantedAuthority> authorities = List.of(
@@ -50,10 +76,10 @@ class JwtServiceTest {
         Authentication authentication = new UsernamePasswordAuthenticationToken(userId.toString(), null, authorities);
 
         // when
-        String token = underTest.createJwt(authentication);
+        TokenPair tokens = underTest.createTokens(authentication, authentication.getName(), "device", "ip");
 
         // then
-        var decoded = JWT.decode(token);
+        var decoded = JWT.decode(tokens.accessToken());
         assertThat(decoded.getSubject()).isEqualTo(userId.toString());
         assertThat(decoded.getClaim("roles").asList(String.class))
                 .containsExactly("ADMIN", "COOK");
@@ -63,6 +89,7 @@ class JwtServiceTest {
                 .isEqualTo(Instant.now(clock).plusMillis(EXPIRATION_MILLIS));
 
         assertThat(decoded.getAlgorithm()).isEqualTo("HS256");
+        assertThat(tokens.refreshToken()).isNotNull();
     }
 
     @Test
@@ -121,6 +148,35 @@ class JwtServiceTest {
         // when / then
         assertThatThrownBy(() -> underTest.parseJwt(token))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test
+    @DisplayName("Given recently used refresh token When JwtService refreshTokens Then revokes family and throws")
+    void GivenRecentlyUsedToken_WhenRefreshTokens_ThenRevokesFamilyAndThrows() {
+        // given
+        String oldRawToken = "old-token";
+        RefreshToken oldToken = RefreshToken.builder()
+                .tokenHash("hash")
+                .userId(UUID.randomUUID())
+                .username("john.doe")
+                .deviceInfo("device")
+                .ipAddress("ip")
+                .tokenFamily(UUID.randomUUID().toString())
+                .revoked(false)
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .lastUsedAt(Instant.now())
+                .build();
+
+        when(refreshTokenRepository.findByTokenHashAndRevokedFalse(anyString()))
+                .thenReturn(Optional.of(oldToken));
+        when(refreshTokenRepository.findByTokenFamilyAndRevokedFalse(oldToken.getTokenFamily()))
+                .thenReturn(List.of(oldToken));
+
+        // when + then
+        assertThatThrownBy(() -> underTest.refreshTokens(oldRawToken, "device", "ip"))
+                .isInstanceOf(InvalidRefreshTokenException.class)
+                .hasMessageContaining("Token reuse detected");
+
+        verify(refreshTokenRepository).findByTokenFamilyAndRevokedFalse(oldToken.getTokenFamily());
     }
 
     // helpers
