@@ -23,4 +23,9 @@ logging:
 jwt.key: ${JWT_KEY:jP@FxBg)+q#grgA$$ESnfBNnmZrgY%P#Z2I)DMRvGa!W%xpcnFuIDj^MW)LX!!Hg}
 jwt.expirationMillis: ${JWT_LIFETIME:3600000}
 
+refresh-tokens:
+  length: 64
+  max-per-user: 5
+  validity-days: 30
+
 springdoc.swagger-ui.path: /swagger-ui.html
