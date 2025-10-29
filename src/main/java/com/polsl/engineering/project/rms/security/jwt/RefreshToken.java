@@ -53,4 +53,23 @@ public class RefreshToken {
 
     @Column(name = "token_family", nullable = false)
     private String tokenFamily;
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        var that = (RefreshToken) o;
+        if (id != null && that.id != null) {
+            return id.equals(that.id);
+        }
+        return tokenHash != null && tokenHash.equals(that.tokenHash);
+    }
+
+    @Override
+    public int hashCode() {
+        return tokenHash != null ? tokenHash.hashCode() : 0;
+    }
+
 }

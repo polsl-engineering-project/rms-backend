@@ -28,11 +28,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JwtService {
 
-    private static final int TOKEN_LENGTH = 64;
-    private static final int MAX_TOKENS_PER_USER = 5;
-    private static final Duration REFRESH_TOKEN_VALIDITY = Duration.ofDays(30);
-
     private final JwtProperties jwtProperties;
+    private final RefreshTokenProperties refreshTokenProperties;
     private final Algorithm algorithm;
     private final Clock clock;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -45,17 +42,17 @@ public class JwtService {
         var accessToken = createAccessToken(authentication);
 
         enforceTokenLimit(UUID.fromString(authentication.getName()));
-        String rawToken = generateSecureToken();
-        String tokenHash = hashToken(rawToken);
-        String tokenFamily = UUID.randomUUID().toString();
+        var rawToken = generateSecureToken();
+        var tokenHash = hashToken(rawToken);
+        var tokenFamily = UUID.randomUUID().toString();
 
-        RefreshToken refreshToken = RefreshToken.builder()
+        var refreshToken = RefreshToken.builder()
                 .tokenHash(tokenHash)
                 .userId(UUID.fromString(authentication.getName()))
                 .username(username)
-                .expiresAt(Instant.now().plus(REFRESH_TOKEN_VALIDITY))
-                .createdAt(Instant.now())
-                .lastUsedAt(Instant.now())
+                .expiresAt(Instant.now(clock).plus(refreshTokenProperties.validityDuration()))
+                .createdAt(Instant.now(clock))
+                .lastUsedAt(Instant.now(clock))
                 .deviceInfo(sanitize(deviceInfo))
                 .ipAddress(sanitize(ipAddress))
                 .tokenFamily(tokenFamily)
@@ -102,13 +99,13 @@ public class JwtService {
 
     @Transactional
     public TokenPair refreshTokens(String rawToken, String deviceInfo, String ipAddress) {
-        String tokenHash = hashToken(rawToken);
+        var tokenHash = hashToken(rawToken);
 
-        RefreshToken oldToken = refreshTokenRepository
+        var oldToken = refreshTokenRepository
                 .findByTokenHashAndRevokedFalse(tokenHash)
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
-        if (oldToken.getExpiresAt().isBefore(Instant.now())) {
+        if (oldToken.getExpiresAt().isBefore(Instant.now(clock))) {
             revokeToken(oldToken);
             throw new InvalidRefreshTokenException("Refresh token expired");
         }
@@ -129,16 +126,16 @@ public class JwtService {
 
         revokeToken(oldToken);
 
-        String newRawToken = generateSecureToken();
-        String newTokenHash = hashToken(newRawToken);
+        var newRawToken = generateSecureToken();
+        var newTokenHash = hashToken(newRawToken);
 
-        RefreshToken newToken = RefreshToken.builder()
+        var newToken = RefreshToken.builder()
                 .tokenHash(newTokenHash)
                 .userId(oldToken.getUserId())
                 .username(oldToken.getUsername())
-                .expiresAt(Instant.now().plus(REFRESH_TOKEN_VALIDITY))
-                .createdAt(Instant.now())
-                .lastUsedAt(Instant.now())
+                .expiresAt(Instant.now(clock).plus(refreshTokenProperties.validityDuration()))
+                .createdAt(Instant.now(clock))
+                .lastUsedAt(Instant.now(clock))
                 .deviceInfo(sanitize(deviceInfo))
                 .ipAddress(sanitize(ipAddress))
                 .tokenFamily(oldToken.getTokenFamily())
@@ -147,39 +144,39 @@ public class JwtService {
 
         refreshTokenRepository.save(newToken);
 
-        String newAccessToken = createAccessToken(authentication);
+        var newAccessToken = createAccessToken(authentication);
 
         return new TokenPair(newAccessToken, newRawToken);
     }
 
     @Transactional
     public void revokeAllUserTokens(UUID userId) {
-        List<RefreshToken> tokens = refreshTokenRepository.findByUserIdAndRevokedFalse(userId);
+        var tokens = refreshTokenRepository.findByUserIdAndRevokedFalse(userId);
         tokens.forEach(this::revokeToken);
     }
 
     @Transactional
     public void revokeToken(String rawToken) {
-        String tokenHash = hashToken(rawToken);
+        var tokenHash = hashToken(rawToken);
         refreshTokenRepository.findByTokenHashAndRevokedFalse(tokenHash)
                 .ifPresent(this::revokeToken);
     }
 
     private void revokeToken(RefreshToken token) {
         token.setRevoked(true);
-        token.setRevokedAt(Instant.now());
+        token.setRevokedAt(Instant.now(clock));
         refreshTokenRepository.save(token);
     }
 
     @Transactional
     public void revokeTokenFamily(String tokenFamily) {
-        List<RefreshToken> familyTokens = refreshTokenRepository
+        var familyTokens = refreshTokenRepository
                 .findByTokenFamilyAndRevokedFalse(tokenFamily);
         familyTokens.forEach(this::revokeToken);
     }
 
     private String generateSecureToken() {
-        byte[] randomBytes = new byte[TOKEN_LENGTH];
+        var randomBytes = new byte[refreshTokenProperties.length()];
         secureRandom.nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
@@ -190,7 +187,7 @@ public class JwtService {
     }
 
     private boolean wasRecentlyUsed(RefreshToken token) {
-        Duration timeSinceLastUse = Duration.between(token.getLastUsedAt(), Instant.now());
+        var timeSinceLastUse = Duration.between(token.getLastUsedAt(), Instant.now(clock));
         return timeSinceLastUse.toSeconds() < 5;
     }
 
@@ -206,11 +203,11 @@ public class JwtService {
 
 
     private void enforceTokenLimit(UUID userId) {
-        List<RefreshToken> userTokens = refreshTokenRepository
+        var userTokens = refreshTokenRepository
                 .findByUserIdAndRevokedFalseOrderByCreatedAtAsc(userId);
 
-        if (userTokens.size() >= MAX_TOKENS_PER_USER) {
-            int tokensToRemove = userTokens.size() - MAX_TOKENS_PER_USER + 1;
+        if (userTokens.size() >= refreshTokenProperties.maxPerUser()) {
+            var tokensToRemove = userTokens.size() - refreshTokenProperties.maxPerUser() + 1;
             userTokens.stream()
                     .limit(tokensToRemove)
                     .forEach(this::revokeToken);
@@ -225,7 +222,7 @@ public class JwtService {
     @Scheduled(cron = "0 0 2 * * ?") // Codziennie o 2:00
     @Transactional
     public void cleanupExpiredTokens() {
-        Instant cutoff = Instant.now().minus(Duration.ofDays(60));
+        var cutoff = Instant.now(clock).minus(Duration.ofDays(60));
         refreshTokenRepository.deleteByExpiresAtBeforeOrRevokedAtBefore(
                 Instant.now(), cutoff
         );

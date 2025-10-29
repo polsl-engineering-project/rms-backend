@@ -9,14 +9,20 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ActiveProfiles("test")
 public abstract class ContainersEnvironment {
 
+    /*
+     * Set reuse to false so that the container automatically shuts down
+     * after the tests, when the JVM terminates.
+     *
+     * In this mode, we can’t use beforeAll or afterAll, because the container
+     * stops after one Repository’s tests and is no longer available for the next one.
+     */
     static PostgreSQLContainer<?> postgreSQLContainer =
             new PostgreSQLContainer<>("postgres:15")
                     .withDatabaseName("rms_test_db")
                     .withUsername("rms_test_user")
                     .withPassword("rms_test_password")
                     .withReuse(false);
-                    // reuse na false, wtedy kontener sam kończy swój żywot autamatycznie po testach czyli po zamknięciu JVM
-                    // wtedy też nie możemy używać beforeAll i AfterAll bo kontener zamykał się po testach jednego Repository i dla drugiego Repository był już niedostępny
+
 
 
     @DynamicPropertySource
