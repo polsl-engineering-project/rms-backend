@@ -55,6 +55,7 @@ class JwtServiceTest {
         messageDigest = MessageDigest.getInstance("SHA-256");
         underTest = new JwtService(
                 new JwtProperties(SECRET, EXPIRATION_MILLIS),
+                new RefreshTokenProperties(64,5, 30),
                 algorithm,
                 clock,
                 refreshTokenRepository,
