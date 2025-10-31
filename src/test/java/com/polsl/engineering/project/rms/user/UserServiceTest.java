@@ -2,8 +2,6 @@ package com.polsl.engineering.project.rms.user;
 
 import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParamsException;
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
-import com.polsl.engineering.project.rms.user.dto.CreateUserRequest;
-import com.polsl.engineering.project.rms.user.dto.UpdateUserRequest;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
 import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import org.instancio.Instancio;

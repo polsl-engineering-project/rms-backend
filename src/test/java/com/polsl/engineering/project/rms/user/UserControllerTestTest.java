@@ -1,9 +1,6 @@
 package com.polsl.engineering.project.rms.user;
 
 import com.polsl.engineering.project.rms.security.jwt.JwtService;
-import com.polsl.engineering.project.rms.user.dto.CreateUserRequest;
-import com.polsl.engineering.project.rms.user.dto.UpdateUserRequest;
-import com.polsl.engineering.project.rms.user.dto.UserResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
