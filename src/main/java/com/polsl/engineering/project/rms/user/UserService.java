@@ -5,9 +5,6 @@ import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatExcep
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.security.UserCredentials;
 import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
-import com.polsl.engineering.project.rms.user.dto.CreateUserRequest;
-import com.polsl.engineering.project.rms.user.dto.UpdateUserRequest;
-import com.polsl.engineering.project.rms.user.dto.UserResponse;
 import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
 import lombok.RequiredArgsConstructor;

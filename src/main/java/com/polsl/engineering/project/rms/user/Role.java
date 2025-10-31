@@ -2,7 +2,7 @@ package com.polsl.engineering.project.rms.user;
 
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 
-public enum Role {
+enum Role {
     ADMIN("ADMIN"),
     MANAGER("MANAGER"),
     WAITER("WAITER"),
