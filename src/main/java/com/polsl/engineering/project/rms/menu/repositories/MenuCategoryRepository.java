@@ -1,0 +1,17 @@
+package com.polsl.engineering.project.rms.menu.repositories;
+
+import com.polsl.engineering.project.rms.menu.MenuCategory;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID> {
+
+    @Query("SELECT c FROM MenuCategory c LEFT JOIN FETCH c.items WHERE c.id = :id")
+    Optional<MenuCategory> findByIdWithPositions(UUID id);
+
+    boolean existsByName(String name);
+}
