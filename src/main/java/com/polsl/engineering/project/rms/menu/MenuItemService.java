@@ -1,5 +1,7 @@
 package com.polsl.engineering.project.rms.menu;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.repositories.MenuCategoryRepository;
@@ -41,6 +43,20 @@ public class MenuItemService {
         return menuMapper.itemToResponse(result);
     }
 
+    MenuItemResponse findById(String strId){
+        var id = toUUIDOrThrow(strId);
+        var result = menuItemRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(String.format("Menu item with id [%s] not found", id)));
+        return menuMapper.itemToResponse(result);
+    }
+
+    Page<MenuItemResponse> findAllPaged(int page, int size, String categoryId) {
+        var pageable = PageRequest.of(page, size);
+        Page<MenuItem> response;
+        if(categoryId != null) response = menuItemRepository.findAllByCategoryId(toUUIDOrThrow(categoryId), pageable);
+        else response = menuItemRepository.findAll(pageable);
+
+        return response.map(menuMapper::itemToResponse);
+    }
 
     @Transactional
     void updateItem(String strId, UpdateMenuItemRequest request) {

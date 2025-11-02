@@ -6,10 +6,12 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static com.polsl.engineering.project.rms.menu.MenuConstraints.*;
@@ -28,6 +30,19 @@ class MenuController {
         return ResponseEntity.ok(menuCategoryService.createCategory(request));
     }
 
+    @GetMapping("/category")
+    ResponseEntity<Page<MenuCategoryResponse>> getAllCategories(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size
+    ){
+        return ResponseEntity.ok(menuCategoryService.findAllPaged(page, size));
+    }
+
+    @GetMapping("/category/{id}")
+    ResponseEntity<MenuCategoryResponse> getCategory(@PathVariable String id, @RequestParam(required = false) Boolean withItems){
+        return ResponseEntity.ok(menuCategoryService.findById(id, withItems));
+    }
+
     @PutMapping("/category/{id}")
     ResponseEntity<Void> updateCategory(@PathVariable("id") String id, @RequestBody @Valid UpdateMenuCategoryRequest request) {
         menuCategoryService.updateCategory(id, request);
@@ -43,6 +58,20 @@ class MenuController {
     @PostMapping("/item")
     ResponseEntity<MenuItemResponse> createItem(@RequestBody @Valid CreateMenuItemRequest request){
         return ResponseEntity.ok(menuItemService.createItem(request));
+    }
+
+    @GetMapping("/item")
+    ResponseEntity<Page<MenuItemResponse>> getAllItems(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "categoryId",  required = false) String categoryId
+    ){
+        return ResponseEntity.ok(menuItemService.findAllPaged(page, size, categoryId));
+    }
+
+    @GetMapping("/item/{id}")
+    ResponseEntity<MenuItemResponse> getItem(@PathVariable("id") String id){
+        return ResponseEntity.ok(menuItemService.findById(id));
     }
 
     @PutMapping("/item/{id}")
@@ -201,7 +230,8 @@ record MenuCategoryResponse(
         UUID id,
         String name,
         String description,
-        Boolean active
+        Boolean active,
+        List<MenuItemResponse> items
 )
 {}
 

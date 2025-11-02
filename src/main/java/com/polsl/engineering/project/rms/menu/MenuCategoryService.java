@@ -4,6 +4,8 @@ import com.polsl.engineering.project.rms.menu.exception.NotUniqueMenuNameExcepti
 import com.polsl.engineering.project.rms.menu.repositories.MenuCategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import static com.polsl.engineering.project.rms.menu.MenuUtils.*;
 
@@ -24,7 +26,27 @@ public class MenuCategoryService {
                 .build();
 
         var result = menuCategoryRepository.save(menuCategory);
-        return menuMapper.categoryToResponse(result);
+        return menuMapper.categoryToResponse(result, false);
+    }
+
+    MenuCategoryResponse findById(String strId, Boolean withItems){
+        var id = toUUIDOrThrow(strId);
+        boolean includeItems = Boolean.TRUE.equals(withItems);
+
+        var category = (includeItems
+                ? menuCategoryRepository.findByIdWithItems(id)
+                : menuCategoryRepository.findById(id))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Menu category with id [%s] not found".formatted(id)
+                ));
+
+        return menuMapper.categoryToResponse(category, includeItems);
+    }
+
+    Page<MenuCategoryResponse> findAllPaged(int page, int size){
+        var pageable = PageRequest.of(page, size);
+        var menuCategories = menuCategoryRepository.findAll(pageable);
+        return menuCategories.map(category -> menuMapper.categoryToResponse(category, false));
     }
 
     @Transactional
