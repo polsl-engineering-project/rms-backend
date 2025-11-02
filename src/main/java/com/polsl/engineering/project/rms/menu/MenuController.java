@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.menu;
 import com.polsl.engineering.project.rms.validation.constraint.NotNullAndTrimmedLengthInRange;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -119,25 +120,17 @@ record CreateMenuItemRequest(
         )
         String name,
 
-        @NotNullAndTrimmedLengthInRange(
-                min = ITEM_DESCRIPTION_MIN_LENGTH,
-                max = ITEM_ALLERGENS_MAX_LENGTH,
-                message = "must not be null and must have trimmed length between {min} and {max} characters"
-        )
+       @Nullable
         String description,
 
         @NotNull
         @Digits(integer = 8, fraction = 2)
         BigDecimal price,
 
-        @NotNull
+        @Nullable
         Integer calories,
 
-        @NotNullAndTrimmedLengthInRange(
-                min = ITEM_ALLERGENS_MIN_LENGTH,
-                max = ITEM_ALLERGENS_MAX_LENGTH,
-                message = "must not be null and must have trimmed length between {min} and {max} characters"
-        )
+        @Nullable
         String allergens,
 
         @NotNull
@@ -190,24 +183,16 @@ record UpdateMenuItemRequest(
         )
         String name,
 
-        @NotNullAndTrimmedLengthInRange(
-                min = ITEM_DESCRIPTION_MIN_LENGTH,
-                max = ITEM_ALLERGENS_MAX_LENGTH,
-                message = "must not be null and must have trimmed length between {min} and {max} characters"
-        )
+        @Nullable
         String description,
 
         @NotNull
         BigDecimal price,
 
-        @NotNull
+        @Nullable
         Integer calories,
 
-        @NotNullAndTrimmedLengthInRange(
-                min = ITEM_ALLERGENS_MIN_LENGTH,
-                max = ITEM_ALLERGENS_MAX_LENGTH,
-                message = "must not be null and must have trimmed length between {min} and {max} characters"
-        )
+        @Nullable
         String allergens,
 
         @NotNull
