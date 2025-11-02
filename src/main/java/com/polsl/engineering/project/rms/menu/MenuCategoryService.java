@@ -32,9 +32,9 @@ public class MenuCategoryService {
         var uuid = toUUIDOrThrow(strId);
 
         validateIdOrThrow(uuid, request.id());
-        validateNameOrThrow(request.name());
 
         var menuCategory = menuCategoryRepository.findById(uuid).orElseThrow(() -> new ResourceNotFoundException(String.format("Menu category with id [%s] not found", request.id())));
+        if(!menuCategory.getName().equals(request.name())) validateNameOrThrow(request.name());
 
         menuCategory.setName(request.name());
         menuCategory.setDescription(request.description());
@@ -47,10 +47,9 @@ public class MenuCategoryService {
     @Transactional
     void deleteCategory(String strId) {
         var id = toUUIDOrThrow(strId);
-        var i = menuCategoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Menu item with id [%s] not found".formatted(id)
-                ));
+        if(!menuCategoryRepository.existsById(id)) throw new ResourceNotFoundException(
+                "Menu item with id [%s] not found".formatted(id)
+        );
         menuCategoryRepository.deleteById(id);
     }
 

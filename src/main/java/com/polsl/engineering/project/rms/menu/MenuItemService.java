@@ -73,10 +73,9 @@ public class MenuItemService {
 
     void deleteItem(String strId) {
         var id = toUUIDOrThrow(strId);
-        var i = menuItemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Menu item with id [%s] not found".formatted(id)
-                ));
+        if(!menuItemRepository.existsById(id)) throw new ResourceNotFoundException(
+                "Menu item with id [%s] not found".formatted(id)
+        );
         menuItemRepository.deleteById(id);
     }
 
