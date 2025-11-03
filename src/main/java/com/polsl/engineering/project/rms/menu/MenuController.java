@@ -150,6 +150,7 @@ record CreateMenuItemRequest(
 
 ){}
 
+@Builder(toBuilder = true)
 record UpdateMenuCategoryRequest(
         @NotNull
         UUID id,
@@ -172,6 +173,7 @@ record UpdateMenuCategoryRequest(
         Boolean active
 ){}
 
+@Builder(toBuilder = true)
 record UpdateMenuItemRequest(
         @NotNull
         UUID id,
