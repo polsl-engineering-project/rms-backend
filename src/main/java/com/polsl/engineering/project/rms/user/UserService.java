@@ -110,7 +110,7 @@ class UserService implements UserCredentialsProvider {
 
     private void validateUsername(String username) {
         if (repository.existsByUsername(username.trim())) {
-            throw new NotUniqueUsernameException("Username already exists");
+            throw new NotUniqueUsernameException(username);
         }
     }
 
