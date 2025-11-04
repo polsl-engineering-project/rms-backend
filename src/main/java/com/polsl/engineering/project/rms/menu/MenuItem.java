@@ -19,7 +19,7 @@ import static com.polsl.engineering.project.rms.menu.MenuConstraints.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MenuItem {
+class MenuItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

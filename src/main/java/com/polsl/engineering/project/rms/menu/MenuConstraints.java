@@ -4,7 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.NONE)
-public class MenuConstraints {
+class MenuConstraints {
     public static final int CATEGORY_NAME_MAX_LENGTH = 200;
     public static final int CATEGORY_NAME_MIN_LENGTH = 3;
 

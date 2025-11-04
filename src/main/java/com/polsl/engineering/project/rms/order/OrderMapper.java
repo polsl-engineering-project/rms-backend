@@ -6,6 +6,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.List;
+import java.util.UUID;
+import com.polsl.engineering.project.rms.order.vo.OrderId;
 
 @Mapper(componentModel = "spring")
 interface OrderMapper {
@@ -26,5 +28,8 @@ interface OrderMapper {
     @Mapping(target = "id", source = "id")
     OrderPayloads.OrderPlacedResponse toResponse(Order order);
 
+    default UUID map(OrderId value) {
+        return value == null ? null : value.value();
+    }
 
 }

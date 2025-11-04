@@ -1,6 +1,5 @@
-package com.polsl.engineering.project.rms.menu.repositories;
+package com.polsl.engineering.project.rms.menu;
 
-import com.polsl.engineering.project.rms.menu.MenuCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID> {
+interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID> {
 
     @Query("SELECT c FROM MenuCategory c LEFT JOIN FETCH c.items WHERE c.id = :id")
     Optional<MenuCategory> findByIdWithItems(@Param("id") UUID id);

@@ -1,18 +1,23 @@
 package com.polsl.engineering.project.rms.menu;
 
+import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
-import com.polsl.engineering.project.rms.menu.repositories.MenuCategoryRepository;
-import com.polsl.engineering.project.rms.menu.repositories.MenuItemRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import static com.polsl.engineering.project.rms.menu.MenuUtils.*;
 
 @Service
 @RequiredArgsConstructor
-public class MenuItemService {
+class MenuItemService implements MenuApi {
 
     private final MenuItemRepository menuItemRepository;
     private final MenuCategoryRepository menuCategoryRepository;
@@ -93,6 +98,14 @@ public class MenuItemService {
                 "Menu item with id [%s] not found".formatted(id)
         );
         menuItemRepository.deleteById(id);
+    }
+
+    @Override
+    public Map<UUID, MenuItemSnapshotForOrder> getSnapshotsForOrderByIds(List<UUID> ids) {
+        return menuItemRepository.findAllById(ids)
+                .stream()
+                .map(menuMapper::itemToSnapshotForOrder)
+                .collect(Collectors.toMap(MenuItemSnapshotForOrder::id, x-> x));
     }
 
 }
