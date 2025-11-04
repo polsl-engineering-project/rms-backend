@@ -113,8 +113,8 @@ class Order {
                 cmd.orderLines()
         );
         var validationResult = validateOrderPlacement(validationInput, clock);
-        if (validationResult.isFailure) {
-            return Result.failure(validationResult.failureReason);
+        if (validationResult.isFailure()) {
+            return Result.failure(validationResult.getError());
         }
 
         var order = new Order(
@@ -137,8 +137,8 @@ class Order {
                 cmd.orderLines()
         );
         var validationResult = validateOrderPlacement(validationInput, clock);
-        if (validationResult.isFailure) {
-            return Result.failure(validationResult.failureReason);
+        if (validationResult.isFailure()) {
+            return Result.failure(validationResult.getError());
         }
 
         var order = new Order(
@@ -155,16 +155,6 @@ class Order {
     }
 
     // ==== Placing Validation ====
-    private record PlacingValidationResult(boolean isFailure, String failureReason) {
-        static PlacingValidationResult success() {
-            return new PlacingValidationResult(false, null);
-        }
-
-        static PlacingValidationResult failure(String failureReason) {
-            return new PlacingValidationResult(true, failureReason);
-        }
-    }
-
     private record PlacingValidationInput(
             DeliveryMode deliveryMode,
             LocalTime scheduledFor,
@@ -172,24 +162,24 @@ class Order {
     ) {
     }
 
-    private static PlacingValidationResult validateOrderPlacement(PlacingValidationInput input, Clock clock) {
+    private static Result<Void> validateOrderPlacement(PlacingValidationInput input, Clock clock) {
         if (input.deliveryMode() == DeliveryMode.SCHEDULED) {
             if (input.scheduledFor() == null) {
-                return PlacingValidationResult.failure("No delivery mode was specified");
+                return Result.failure("No delivery mode was specified");
             }
             if (LocalTime.now(clock).isAfter(input.scheduledFor())) {
-                return PlacingValidationResult.failure("Scheduled time must be in the future.");
+                return Result.failure("Scheduled time must be in the future.");
             }
         }
         if (input.deliveryMode() == DeliveryMode.ASAP && input.scheduledFor() != null) {
-            return PlacingValidationResult.failure("Delivery mode must be ASAP.");
+            return Result.failure("Delivery mode must be ASAP.");
         }
 
         if (input.lines() == null || input.lines().isEmpty()) {
-            return PlacingValidationResult.failure("No order lines were provided");
+            return Result.failure("No order lines were provided");
         }
 
-        return PlacingValidationResult.success();
+        return Result.ok(null);
     }
 
     // ==== Behaviour API ====
