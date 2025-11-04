@@ -1,6 +1,5 @@
 package com.polsl.engineering.project.rms.common.result;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 public sealed interface Result<T> {
@@ -32,12 +31,18 @@ public sealed interface Result<T> {
         return this instanceof Failure<T>;
     }
 
-    default Optional<T> getValue() {
-        return this instanceof Success<T>(T value) ? Optional.of(value) : Optional.empty();
+    default T getValue() {
+        if (this instanceof Success<T>(T value)) {
+            return value;
+        }
+        throw new IllegalStateException("Cannot get value from Failure result");
     }
 
-    default Optional<String> getError() {
-        return this instanceof Failure<T>(String error) ? Optional.of(error) : Optional.empty();
+    default String getError() {
+        if (this instanceof Failure<T>(String error)) {
+            return error;
+        }
+        throw new IllegalStateException("Cannot get error from Success result");
     }
 
     default <U> Result<U> map(Function<T, U> mapper) {
