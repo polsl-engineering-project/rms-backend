@@ -101,7 +101,7 @@ class Order {
     }
 
     // ==== Factory Methods ====
-    public static Result<Order> placePickUpOrder(PlacePickUpOrderCommand cmd, Clock clock) {
+    static Result<Order> placePickUpOrder(PlacePickUpOrderCommand cmd, Clock clock) {
         var validationInput = new PlacingValidationInput(
                 cmd.deliveryMode(),
                 cmd.scheduledFor(),
@@ -125,7 +125,7 @@ class Order {
         return Result.ok(order);
     }
 
-    public static Result<Order> placeDeliveryOrder(PlaceDeliveryOrderCommand cmd, Clock clock) {
+    static Result<Order> placeDeliveryOrder(PlaceDeliveryOrderCommand cmd, Clock clock) {
         var validationInput = new PlacingValidationInput(
                 cmd.deliveryMode(),
                 cmd.scheduledFor(),
@@ -204,7 +204,7 @@ class Order {
         return Result.ok(null);
     }
 
-    public Result<Void> markAsReady(Clock clock) {
+    Result<Void> markAsReady(Clock clock) {
         if (status != OrderStatus.CONFIRMED) {
             return Result.failure("Only orders with status CONFIRMED can be marked as ready.");
         }
@@ -220,7 +220,7 @@ class Order {
         return Result.ok(null);
     }
 
-    public Result<Void> addItemsByStaff(AddItemsByStaffCommand cmd, Clock clock) {
+    Result<Void> addItemsByStaff(AddItemsByStaffCommand cmd, Clock clock) {
         if (status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED) {
             return Result.failure("Cannot add items to a completed or cancelled order.");
         }
@@ -247,7 +247,9 @@ class Order {
         return Result.ok(null);
     }
 
-    public Result<Void> startDelivery(Clock clock) {
+    
+
+    Result<Void> startDelivery(Clock clock) {
         if (type != OrderType.DELIVERY) {
             return Result.failure("Only DELIVERY orders can be started for delivery.");
         }
@@ -261,7 +263,7 @@ class Order {
         return Result.ok(null);
     }
 
-    public Result<Void> complete(Clock clock) {
+    Result<Void> complete(Clock clock) {
         if (type == OrderType.PICKUP && status != OrderStatus.READY_FOR_PICKUP) {
             return Result.failure("Only PICKUP orders with status READY_FOR_PICKUP can be completed.");
         }
@@ -275,7 +277,7 @@ class Order {
         return Result.ok(null);
     }
 
-    public Result<Void> cancel(CancelOrderCommand cmd, Clock clock) {
+    Result<Void> cancel(CancelOrderCommand cmd, Clock clock) {
         if (status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED) {
             return Result.failure("Cannot cancel a completed or already cancelled order.");
         }
