@@ -6,6 +6,7 @@ CREATE TABLE orders (
     order_type VARCHAR(50) NOT NULL,
     delivery_mode VARCHAR(50) NOT NULL,
     order_status VARCHAR(50) NOT NULL,
+    customer_visible_status VARCHAR(50) NOT NULL,
 
     -- delivery address (embedded). Nullable for pickup orders
     delivery_street VARCHAR(255),
