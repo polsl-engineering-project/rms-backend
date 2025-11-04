@@ -35,10 +35,14 @@ class Order {
     @Column(name = "order_status")
     private OrderStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customer_visible_status")
+    private OrderCustomerVisibleStatus customerVisibleStatus;
+
     @Getter(AccessLevel.NONE)
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
-    private List<OrderLine> lines = new ArrayList<>();
+    private final List<OrderLine> lines = new ArrayList<>();
 
     @Embedded
     @AttributeOverride(name = "street", column = @Column(name = "delivery_street"))
@@ -91,6 +95,7 @@ class Order {
         this.type = orderType;
         this.deliveryMode = deliveryMode;
         this.status = OrderStatus.PENDING_APPROVAL;
+        this.customerVisibleStatus = OrderCustomerVisibleStatus.PENDING_APPROVAL;
         this.lines.addAll(orderLines);
         this.deliveryAddress = deliveryAddress;
         this.customerInfo = customerInfo;
@@ -194,7 +199,6 @@ class Order {
         }
 
         status = OrderStatus.APPROVED_BY_FRONT_DESK;
-        updatedAt = Instant.now(clock);
 
         return Result.ok(null);
     }
@@ -207,6 +211,7 @@ class Order {
             return Result.failure("Estimated preparation time must be provided and greater than 0 minutes for ASAP orders.");
         }
 
+        customerVisibleStatus = OrderCustomerVisibleStatus.IN_PREPARATION;
         status = OrderStatus.CONFIRMED;
         estimatedPreparationMinutes = cmd.estimatedPreparationMinutes();
 
@@ -222,6 +227,7 @@ class Order {
 
         if (type == OrderType.PICKUP) {
             status = OrderStatus.READY_FOR_PICKUP;
+            customerVisibleStatus = OrderCustomerVisibleStatus.READY_FOR_PICKUP;
         } else {
             status = OrderStatus.READY_FOR_DRIVER;
         }
@@ -267,6 +273,7 @@ class Order {
         }
 
         status = OrderStatus.IN_DELIVERY;
+        customerVisibleStatus = OrderCustomerVisibleStatus.IN_DELIVERY;
         updatedAt = Instant.now(clock);
 
         return Result.ok(null);
@@ -281,6 +288,7 @@ class Order {
         }
 
         status = OrderStatus.COMPLETED;
+        customerVisibleStatus = OrderCustomerVisibleStatus.COMPLETED;
         updatedAt = Instant.now(clock);
 
         return Result.ok(null);
@@ -292,6 +300,7 @@ class Order {
         }
 
         status = OrderStatus.CANCELLED;
+        customerVisibleStatus = OrderCustomerVisibleStatus.CANCELLED;
         cancellationReason = cmd.reason();
 
         updatedAt = Instant.now(clock);
