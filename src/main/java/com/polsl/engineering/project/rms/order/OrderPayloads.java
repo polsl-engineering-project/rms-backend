@@ -4,6 +4,14 @@ import com.polsl.engineering.project.rms.order.vo.Address;
 import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -11,42 +19,42 @@ import java.util.UUID;
 public class OrderPayloads {
 
     public record OrderLine(
-            UUID menuItemId,
-            int quantity,
-            long version
+            @NotNull UUID menuItemId,
+            @Min(1) int quantity,
+            @PositiveOrZero long version
     ) {
     }
 
     public record PlaceDeliveryOrderRequest(
-            CustomerInfo customerInfo,
-            Address address,
-            DeliveryMode deliveryMode,
-            LocalTime scheduledFor,
-            List<OrderLine> orderLines
+            @Valid @NotNull CustomerInfo customerInfo,
+            @Valid @NotNull Address address,
+            @NotNull DeliveryMode deliveryMode,
+            @NotNull LocalTime scheduledFor,
+            @NotEmpty @Valid List<OrderLine> orderLines
     ) {
     }
 
     public record PlacePickUpOrderRequest(
-            CustomerInfo customerInfo,
-            DeliveryMode deliveryMode,
-            LocalTime scheduledFor,
-            List<OrderLine> orderLines
+            @Valid @NotNull CustomerInfo customerInfo,
+            @NotNull DeliveryMode deliveryMode,
+            @NotNull LocalTime scheduledFor,
+            @NotEmpty @Valid List<OrderLine> orderLines
     ) {
     }
 
     public record CancelOrderRequest(
-            String reason
+            @NotBlank @Size(max = 500) String reason
     ) {
     }
 
     public record AddItemsByStaffRequest(
-            List<OrderLine> orderLines,
-            Integer updatedEstimatedMinutes
+            @NotEmpty @Valid List<OrderLine> orderLines,
+            @PositiveOrZero Integer updatedEstimatedMinutes
     ) {
     }
 
     public record  ApproveOrderByKitchenRequest(
-            Integer updatedEstimatedMinutes
+            @PositiveOrZero Integer updatedEstimatedMinutes
     ) {
     }
 
