@@ -184,6 +184,7 @@ class Order {
         }
 
         status = OrderStatus.APPROVED_BY_FRONT_DESK;
+        updatedAt = Instant.now(clock);
 
         return Result.ok(null);
     }
