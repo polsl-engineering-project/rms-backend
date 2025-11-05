@@ -144,7 +144,8 @@ class OrderService {
             var orderLine = new OrderLine(
                     lineFromRequest.menuItemId().toString(),
                     lineFromRequest.quantity(),
-                    new Money(snapshot.price())
+                    new Money(snapshot.price()),
+                    snapshot.version()
             );
             orderLines.add(orderLine);
         }

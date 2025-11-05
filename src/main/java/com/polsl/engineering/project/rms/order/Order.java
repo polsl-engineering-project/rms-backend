@@ -248,7 +248,63 @@ class Order {
         return Result.ok(null);
     }
 
-    
+    Result<Void> changeOrderLines(ChangeOrderLinesCommand cmd, Clock clock) {
+        if (status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED) {
+            return Result.failure("Cannot change order lines to COMPLETED or CANCELLED orders.");
+        }
+        if (status == OrderStatus.IN_DELIVERY) {
+            return Result.failure("Cannot change order lines when order is in delivery.");
+        }
+
+        var newLines = cmd.safeGetNewLines();
+        var removeLines = cmd.safeGetRemovedLines();
+
+        var cmdValidationResult = validateChangeOrderLinesInput(newLines, removeLines);
+        if (cmdValidationResult.isFailure()) {
+            return Result.failure(cmdValidationResult.getError());
+        }
+
+        if (!removeLines.isEmpty()) {
+            var removeResult = OrderLinesRemover.remove(
+                    lines,
+                    removeLines
+            );
+
+            if (removeResult.isFailure()) {
+                return Result.failure(removeResult.getError());
+            }
+
+            lines.clear();
+            lines.addAll(removeResult.getValue());
+        }
+
+        lines.addAll(newLines);
+
+        if (status == OrderStatus.READY_FOR_DRIVER || status == OrderStatus.READY_FOR_PICKUP) {
+            status = OrderStatus.CONFIRMED;
+        }
+
+        estimatedPreparationMinutes = cmd.updatedEstimatedPreparationTimeMinutes();
+        updatedAt = Instant.now(clock);
+
+        return Result.ok(null);
+    }
+
+    private static Result<Void> validateChangeOrderLinesInput(List<OrderLine> newLines, List<OrderLineRemoval> removeLines) {
+        if (newLines.isEmpty() && removeLines.isEmpty()) {
+            return Result.failure("No order lines to add or remove were provided.");
+        }
+
+        for (var newLine : newLines) {
+            for (var removeLine : removeLines) {
+                if (newLine.getMenuItemId().equals(removeLine.menuItemId())) {
+                    return Result.failure("Cannot add and remove the same menu item in one operation.");
+                }
+            }
+        }
+
+        return Result.ok(null);
+    }
 
     Result<Void> startDelivery(Clock clock) {
         if (type != OrderType.DELIVERY) {

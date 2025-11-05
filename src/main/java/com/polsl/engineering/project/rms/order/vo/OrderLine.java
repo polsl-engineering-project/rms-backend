@@ -16,25 +16,29 @@ public class OrderLine {
     @AttributeOverride(name = "value", column = @Column(name = "id"))
     private OrderLineId id;
 
-    @Column(nullable = false)
+    @Column(name = "menu_item_id", nullable = false)
     private String menuItemId;
 
-    @Column(nullable = false)
+    @Column(name = "quantity", nullable = false)
     private int quantity;
 
     @Embedded
     @AttributeOverride(name = "amount", column = @Column(name = "unit_price"))
     private Money unitPrice;
 
+    @Column(name = "menu_item_version", nullable = false)
+    private long menuItemVersion;
+
     // JPA requires a default constructor
     protected OrderLine() {
     }
 
-    public OrderLine(String menuItemId, int quantity, Money unitPrice) {
+    public OrderLine(String menuItemId, int quantity, Money unitPrice, long menuItemVersion) {
         this.id = OrderLineId.generate();
         this.menuItemId = menuItemId;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
+        this.menuItemVersion = menuItemVersion;
     }
 
     @Override

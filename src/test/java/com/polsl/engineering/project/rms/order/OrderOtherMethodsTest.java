@@ -1,0 +1,143 @@
+package com.polsl.engineering.project.rms.order;
+
+import com.polsl.engineering.project.rms.order.cmd.ApproveOrderByKitchenCommand;
+import com.polsl.engineering.project.rms.order.cmd.PlaceDeliveryOrderCommand;
+import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
+import com.polsl.engineering.project.rms.order.vo.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.*;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("Order - other methods")
+class OrderOtherMethodsTest {
+
+    private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2025-01-01T12:00:00Z"), ZoneOffset.UTC);
+
+    private static OrderLine line(String id, int qty, String price, long version) {
+        return new OrderLine(id, qty, new Money(new BigDecimal(price)), version);
+    }
+
+    private static Order placePickup(List<OrderLine> initialLines) {
+        var cmd = new PlacePickUpOrderCommand(
+                new CustomerInfo("John", "Doe", "123456789"),
+                DeliveryMode.SCHEDULED,
+                LocalTime.of(13, 0),
+                initialLines
+        );
+        var placed = Order.placePickUpOrder(cmd, FIXED_CLOCK);
+        assertThat(placed.isSuccess()).isTrue();
+        return placed.getValue();
+    }
+
+    private static Order placeDelivery(List<OrderLine> initialLines) {
+        var cmd = new PlaceDeliveryOrderCommand(
+                new CustomerInfo("Jane", "Doe", "987654321"),
+                new Address("Main", "1", null, "City", "00-000"),
+                DeliveryMode.SCHEDULED,
+                LocalTime.of(13, 0),
+                initialLines
+        );
+        var placed = Order.placeDeliveryOrder(cmd, FIXED_CLOCK);
+        assertThat(placed.isSuccess()).isTrue();
+        return placed.getValue();
+    }
+
+    @Test
+    @DisplayName("Given pickup order - when approve flow - then status CONFIRMED")
+    void GivenPickupOrder_WhenApproveFlow_ThenConfirmed() {
+        // given
+        var order = placePickup(List.of(line("pizza", 1, "30.00", 1)));
+
+        // when
+        var frontDeskResult = order.approveByFrontDesk(FIXED_CLOCK);
+        var kitchenResult = order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK);
+
+        // then
+        assertThat(frontDeskResult.isSuccess()).isTrue();
+        assertThat(kitchenResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("Given delivery order - when approve flow - then status CONFIRMED")
+    void GivenDeliveryOrder_WhenApproveFlow_ThenConfirmed() {
+        // given
+        var order = placeDelivery(List.of(line("pizza", 1, "30.00", 1)));
+
+        // when
+        var frontDeskResult = order.approveByFrontDesk(FIXED_CLOCK);
+        var kitchenResult = order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK);
+
+        // then
+        assertThat(frontDeskResult.isSuccess()).isTrue();
+        assertThat(kitchenResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("Given pickup order - when mark as ready and complete - then READY_FOR_PICKUP and COMPLETED")
+    void GivenPickupOrder_WhenMarkReadyAndComplete_ThenReadyAndCompleted() {
+        // given
+        var order = placePickup(List.of(line("cake", 1, "15.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+
+        // when
+        var markReadyResult = order.markAsReady(FIXED_CLOCK);
+
+        // then
+        assertThat(markReadyResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
+
+        // when
+        var completeResult = order.complete(FIXED_CLOCK);
+
+        // then
+        assertThat(completeResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("Given delivery order - when mark as ready and start delivery - then READY_FOR_DRIVER and IN_DELIVERY")
+    void GivenDeliveryOrder_WhenMarkReadyAndStartDelivery_ThenReadyAndInDelivery() {
+        // given
+        var order = placeDelivery(List.of(line("wrap", 1, "18.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+
+        // when
+        var markReadyResult = order.markAsReady(FIXED_CLOCK);
+
+        // then
+        assertThat(markReadyResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_DRIVER);
+
+        // when
+        var startDeliveryResult = order.startDelivery(FIXED_CLOCK);
+
+        // then
+        assertThat(startDeliveryResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_DELIVERY);
+    }
+
+    @Test
+    @DisplayName("Given confirmed order - when cancel - then CANCELLED")
+    void GivenConfirmedOrder_WhenCancel_ThenCancelled() {
+        // given
+        var order = placePickup(List.of(line("soda", 1, "5.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+
+        // when
+        var cancelResult = order.cancel(new com.polsl.engineering.project.rms.order.cmd.CancelOrderCommand("client request"), FIXED_CLOCK);
+
+        // then
+        assertThat(cancelResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+}
