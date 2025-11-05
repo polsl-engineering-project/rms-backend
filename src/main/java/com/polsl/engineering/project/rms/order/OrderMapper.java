@@ -18,9 +18,6 @@ interface OrderMapper {
     @Mapping(target = "orderLines", source = "orderLines")
     PlacePickUpOrderCommand toCommand(OrderPayloads.PlacePickUpOrderRequest request, List<OrderLine> orderLines);
 
-    @Mapping(target = "newLines", source = "orderLines")
-    AddItemsByStaffCommand toCommand(OrderPayloads.AddItemsByStaffRequest request, List<OrderLine> orderLines);
-
     ApproveOrderByKitchenCommand toCommand(OrderPayloads.ApproveOrderByKitchenRequest request);
 
     CancelOrderCommand toCommand(OrderPayloads.CancelOrderRequest request);

@@ -221,33 +221,6 @@ class Order {
         return Result.ok(null);
     }
 
-    Result<Void> addItemsByStaff(AddItemsByStaffCommand cmd, Clock clock) {
-        if (status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED) {
-            return Result.failure("Cannot add items to a completed or cancelled order.");
-        }
-
-        if (cmd.newLines() == null || cmd.newLines().isEmpty()) {
-            return Result.failure("No new order lines were provided.");
-        }
-
-        if (deliveryMode == DeliveryMode.ASAP &&
-                status.ordinal() >= OrderStatus.CONFIRMED.ordinal() &&
-                cmd.updatedEstimatedMinutes() == null
-        ) {
-            return Result.failure("Updated estimated preparation time must be provided for ASAP orders.");
-        }
-
-        this.lines.addAll(cmd.newLines());
-
-        if (cmd.updatedEstimatedMinutes() != null) {
-            this.estimatedPreparationMinutes = cmd.updatedEstimatedMinutes();
-        }
-
-        updatedAt = Instant.now(clock);
-
-        return Result.ok(null);
-    }
-
     Result<Void> changeOrderLines(ChangeOrderLinesCommand cmd, Clock clock) {
         if (status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED) {
             return Result.failure("Cannot change order lines to COMPLETED or CANCELLED orders.");

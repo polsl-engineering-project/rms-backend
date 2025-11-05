@@ -25,7 +25,7 @@ class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/placeDeliveryOrder")
+    @PostMapping("/place-delivery-order")
     ResponseEntity<OrderPayloads.OrderPlacedResponse> placeDeliveryOrder(
             @Valid @RequestBody OrderPayloads.PlaceDeliveryOrderRequest request
     ) {
@@ -51,15 +51,6 @@ class OrderController {
     @PostMapping("/{id}/ready")
     ResponseEntity<Void> markAsReady(@PathVariable("id") String id) {
         orderService.markAsReady(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/{id}/items")
-    ResponseEntity<Void> addItemsByStaff(
-            @PathVariable("id") String id,
-            @Valid @RequestBody OrderPayloads.AddItemsByStaffRequest request
-    ) {
-        orderService.addItemsByStaff(id, request);
         return ResponseEntity.noContent().build();
     }
 

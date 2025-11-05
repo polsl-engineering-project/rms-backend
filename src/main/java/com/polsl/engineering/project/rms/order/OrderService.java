@@ -78,16 +78,6 @@ class OrderService {
     }
 
     @Transactional
-    void addItemsByStaff(String orderId, OrderPayloads.AddItemsByStaffRequest request) {
-        var order = findByIdOrThrow(orderId);
-        var orderLines = getOrderLines(request.orderLines());
-        var cmd = mapper.toCommand(request, orderLines);
-        var result = order.addItemsByStaff(cmd, clock);
-        validateActionResult(result);
-        repository.save(order);
-    }
-
-    @Transactional
     void startDelivery(String orderId) {
         var order = findByIdOrThrow(orderId);
         var result = order.startDelivery(clock);
