@@ -26,6 +26,12 @@ import java.time.Clock;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    // Role name constants to avoid duplicated literals and IDE warnings
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_MANAGER = "MANAGER";
+    private static final String ROLE_WAITER = "WAITER";
+    private static final String ROLE_COOK = "COOK";
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         return http
@@ -34,14 +40,29 @@ public class SecurityConfig {
                         x.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/login", "api/v1/auth/refresh").permitAll()
+                        // Auth endpoints
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                        // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui*/**", "/v3/api-docs*/**").permitAll()
-                        .requestMatchers("/api/v1/menu/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/api/v1/users/**").hasAnyRole("ADMIN", "MANAGER")
+
+                        // Orders - anonymous only (placing orders)
+                        .requestMatchers("/api/v1/orders/place-pick-up-order", "/api/v1/orders/place-delivery-order").anonymous()
+
+                        // Orders - role based
+                        .requestMatchers("/api/v1/orders/*/approve/front-desk", "/api/v1/orders/*/start-delivery", "/api/v1/orders/*/complete", "/api/v1/orders/*/cancel", "/api/v1/orders/*/change-lines").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_WAITER)
+                        .requestMatchers("/api/v1/orders/*/approve/kitchen").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_COOK)
+                        // Mark as ready - any authenticated user
+                        .requestMatchers("/api/v1/orders/*/ready").authenticated()
+
+                        // Keep existing restrictions for menu/users
+                        .requestMatchers("/api/v1/menu/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
+                        .requestMatchers("/api/v1/users/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
+
+                        // fallback - authenticated
                         .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+                 )
+                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                 .build();
     }
 
     @Bean
