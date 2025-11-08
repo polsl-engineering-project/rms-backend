@@ -9,6 +9,8 @@ import com.polsl.engineering.project.rms.order.exception.MenuItemVersionMismatch
 import com.polsl.engineering.project.rms.order.vo.Money;
 import com.polsl.engineering.project.rms.order.vo.OrderId;
 import com.polsl.engineering.project.rms.order.vo.OrderLine;
+import com.polsl.engineering.project.rms.order.vo.OrderLineRemoval;
+import com.polsl.engineering.project.rms.order.cmd.ChangeOrderLinesCommand;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 class OrderService {
 
-    private final OrderRepository repository;
+    private final OrderRepository jdbcRepository;
     private final MenuApi menuApi;
     private final OrderMapper mapper;
     private final Clock clock;
@@ -34,7 +36,7 @@ class OrderService {
         validateActionResult(result);
 
         var order = result.getValue();
-        repository.save(order);
+        jdbcRepository.saveNewOrder(order);
 
         return mapper.toResponse(order);
     }
@@ -47,7 +49,7 @@ class OrderService {
         validateActionResult(result);
 
         var order = result.getValue();
-        repository.save(order);
+        jdbcRepository.saveNewOrder(order);
 
         return mapper.toResponse(order);
     }
@@ -57,7 +59,7 @@ class OrderService {
         var order = findByIdOrThrow(orderId);
         var result = order.approveByFrontDesk(clock);
         validateActionResult(result);
-        repository.save(order);
+        jdbcRepository.updateWithoutLines(order);
     }
 
     @Transactional
@@ -66,7 +68,7 @@ class OrderService {
         var cmd = mapper.toCommand(request);
         var result = order.approveByKitchen(cmd, clock);
         validateActionResult(result);
-        repository.save(order);
+        jdbcRepository.updateWithoutLines(order);
     }
 
     @Transactional
@@ -74,7 +76,7 @@ class OrderService {
         var order = findByIdOrThrow(orderId);
         var result = order.markAsReady(clock);
         validateActionResult(result);
-        repository.save(order);
+        jdbcRepository.updateWithoutLines(order);
     }
 
     @Transactional
@@ -82,7 +84,7 @@ class OrderService {
         var order = findByIdOrThrow(orderId);
         var result = order.startDelivery(clock);
         validateActionResult(result);
-        repository.save(order);
+        jdbcRepository.updateWithoutLines(order);
     }
 
     @Transactional
@@ -90,7 +92,7 @@ class OrderService {
         var order = findByIdOrThrow(orderId);
         var result = order.complete(clock);
         validateActionResult(result);
-        repository.save(order);
+        jdbcRepository.updateWithoutLines(order);
     }
 
     @Transactional
@@ -99,11 +101,38 @@ class OrderService {
         var cmd = mapper.toCommand(request);
         var result = order.cancel(cmd, clock);
         validateActionResult(result);
-        repository.save(order);
+        jdbcRepository.updateWithoutLines(order);
+    }
+
+    @Transactional
+    void changeOrderLines(String orderId, OrderPayloads.ChangeOrderLinesRequest request) {
+        var order = findByIdOrThrow(orderId);
+
+        List<OrderLine> newLinesDomain = List.of();
+        if (request.newLines() != null && !request.newLines().isEmpty()) {
+            newLinesDomain = getOrderLines(request.newLines());
+        }
+
+        List<OrderLineRemoval> removedLinesDomain = List.of();
+        if (request.removedLines() != null && !request.removedLines().isEmpty()) {
+            var tmp = new ArrayList<OrderLineRemoval>();
+            for (var rl : request.removedLines()) {
+                tmp.add(new OrderLineRemoval(rl.menuItemId().toString(), rl.quantity()));
+            }
+            removedLinesDomain = tmp;
+        }
+
+        int updatedMinutes = request.updatedEstimatedPreparationTimeMinutes() != null ? request.updatedEstimatedPreparationTimeMinutes() : 0;
+
+        var cmd = new ChangeOrderLinesCommand(newLinesDomain, removedLinesDomain, updatedMinutes);
+        var result = order.changeOrderLines(cmd, clock);
+        validateActionResult(result);
+
+        jdbcRepository.updateWithLines(order);
     }
 
     private Order findByIdOrThrow(String id) {
-        return repository.findById(OrderId.from(id))
+        return jdbcRepository.findById(OrderId.from(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id %s not found".formatted(id)));
     }
 

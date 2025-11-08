@@ -75,4 +75,13 @@ class OrderController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/change-lines")
+    ResponseEntity<Void> changeOrderLines(
+            @PathVariable("id") String id,
+            @Valid @RequestBody OrderPayloads.ChangeOrderLinesRequest request
+    ) {
+        orderService.changeOrderLines(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
 }

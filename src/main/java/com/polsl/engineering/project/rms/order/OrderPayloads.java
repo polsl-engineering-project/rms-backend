@@ -37,7 +37,7 @@ public class OrderPayloads {
     public record PlacePickUpOrderRequest(
             @Valid @NotNull CustomerInfo customerInfo,
             @NotNull DeliveryMode deliveryMode,
-            @NotNull LocalTime scheduledFor,
+            LocalTime scheduledFor,
             @NotEmpty @Valid List<OrderLine> orderLines
     ) {
     }
@@ -58,7 +58,18 @@ public class OrderPayloads {
     ) {
     }
 
+    public record RemoveLine(
+            @NotNull UUID menuItemId,
+            @Min(1) int quantity
+    ) {
+    }
 
+    public record ChangeOrderLinesRequest(
+            @Valid List<OrderLine> newLines,
+            @Valid List<RemoveLine> removedLines,
+            @PositiveOrZero Integer updatedEstimatedPreparationTimeMinutes
+    ) {
+    }
 
     public record OrderPlacedResponse(
             UUID id
