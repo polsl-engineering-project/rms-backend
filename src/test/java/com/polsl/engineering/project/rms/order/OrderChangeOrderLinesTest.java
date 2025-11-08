@@ -81,7 +81,7 @@ class OrderChangeOrderLinesTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(order.getEstimatedPreparationMinutes()).isEqualTo(10);
         assertThat(order.getLines())
-                .extracting(OrderLine::getMenuItemId, OrderLine::getQuantity, OrderLine::getMenuItemVersion)
+                .extracting(OrderLine::menuItemId, OrderLine::quantity, OrderLine::menuItemVersion)
                 .contains(
                         org.assertj.core.groups.Tuple.tuple("pizza", 1, 1L),
                         org.assertj.core.groups.Tuple.tuple("pasta", 2, 3L),
@@ -110,7 +110,7 @@ class OrderChangeOrderLinesTest {
         assertThat(result.isSuccess()).isTrue();
         // Expect: remove 3 from version 5 (fully gone), and 1 from version 1 (left 1)
         assertThat(order.getLines())
-                .extracting(OrderLine::getMenuItemId, OrderLine::getQuantity, OrderLine::getMenuItemVersion)
+                .extracting(OrderLine::menuItemId, OrderLine::quantity, OrderLine::menuItemVersion)
                 .containsExactlyInAnyOrder(
                         org.assertj.core.groups.Tuple.tuple("pizza", 1, 1L)
                 );
@@ -136,7 +136,7 @@ class OrderChangeOrderLinesTest {
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getError()).contains("Cannot remove more quantity than exists for menu item id: burger");
         assertThat(order.getLines())
-                .extracting(OrderLine::getMenuItemId, OrderLine::getQuantity, OrderLine::getMenuItemVersion)
+                .extracting(OrderLine::menuItemId, OrderLine::quantity, OrderLine::menuItemVersion)
                 .containsExactlyInAnyOrder(
                         org.assertj.core.groups.Tuple.tuple("burger", 1, 2L),
                         org.assertj.core.groups.Tuple.tuple("burger", 1, 3L)

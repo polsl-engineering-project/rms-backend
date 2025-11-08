@@ -3,8 +3,8 @@ package com.polsl.engineering.project.rms.order;
 import com.polsl.engineering.project.rms.common.result.Result;
 import com.polsl.engineering.project.rms.order.cmd.*;
 import com.polsl.engineering.project.rms.order.vo.*;
-import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.Clock;
@@ -13,71 +13,40 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Getter
-@Table(name = "orders")
-@Entity(name = "Order")
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 class Order {
 
-    @EmbeddedId
-    @AttributeOverride(name = "value", column = @Column(name = "id"))
     private OrderId id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "order_type")
     private OrderType type;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "delivery_mode")
     private DeliveryMode deliveryMode;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "order_status")
     private OrderStatus status;
 
     @Getter(AccessLevel.NONE)
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "order_id", nullable = false)
     private final List<OrderLine> lines = new ArrayList<>();
 
-    @Embedded
-    @AttributeOverride(name = "street", column = @Column(name = "delivery_street"))
-    @AttributeOverride(name = "houseNumber", column = @Column(name = "delivery_house_number"))
-    @AttributeOverride(name = "apartmentNumber", column = @Column(name = "delivery_apartment_number"))
-    @AttributeOverride(name = "city", column = @Column(name = "delivery_city"))
-    @AttributeOverride(name = "postalCode", column = @Column(name = "delivery_postal_code"))
     private Address deliveryAddress;
 
-    @Embedded
-    @AttributeOverride(name = "firstName", column = @Column(name = "customer_first_name"))
-    @AttributeOverride(name = "lastName", column = @Column(name = "customer_last_name"))
-    @AttributeOverride(name = "phoneNumber", column = @Column(name = "customer_phone_number"))
     private CustomerInfo customerInfo;
 
-    @Column(name = "scheduled_for")
     private LocalTime scheduledFor;
 
-    @Column(name = "estimated_preparation_minutes")
     private Integer estimatedPreparationMinutes;
 
-    @Column(name = "cancellation_reason")
     private String cancellationReason;
 
-    @Column(name = "placed_at")
     private Instant placedAt;
 
-    @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @Version
-    @Column(name = "version", nullable = false)
     private long version;
 
     // ==== Constructors ====
-    protected Order() {
-        // For JPA
-    }
-
     private Order(
             OrderType orderType,
             DeliveryMode deliveryMode,
@@ -101,6 +70,39 @@ class Order {
     }
 
     // ==== Factory Methods ====
+    static Order reconstruct(
+            OrderId id,
+            OrderType type,
+            DeliveryMode deliveryMode,
+            OrderStatus status,
+            List<OrderLine> lines,
+            Address deliveryAddress,
+            CustomerInfo customerInfo,
+            LocalTime scheduledFor,
+            Integer estimatedPreparationMinutes,
+            String cancellationReason,
+            Instant placedAt,
+            Instant updatedAt,
+            long version
+    ) {
+        var order = new Order(
+                id,
+                type,
+                deliveryMode,
+                status,
+                deliveryAddress,
+                customerInfo,
+                scheduledFor,
+                estimatedPreparationMinutes,
+                cancellationReason,
+                placedAt,
+                updatedAt,
+                version
+        );
+        order.lines.addAll(lines);
+        return order;
+    }
+
     static Result<Order> placePickUpOrder(PlacePickUpOrderCommand cmd, Clock clock) {
         var validationInput = new PlacingValidationInput(
                 cmd.deliveryMode(),
@@ -253,11 +255,16 @@ class Order {
 
         lines.addAll(newLines);
 
+        if (status == OrderStatus.READY_FOR_PICKUP ||
+                status == OrderStatus.READY_FOR_DRIVER ||
+                status == OrderStatus.CONFIRMED) {
+            estimatedPreparationMinutes = cmd.updatedEstimatedPreparationTimeMinutes();
+        }
+
         if (status == OrderStatus.READY_FOR_DRIVER || status == OrderStatus.READY_FOR_PICKUP) {
             status = OrderStatus.CONFIRMED;
         }
 
-        estimatedPreparationMinutes = cmd.updatedEstimatedPreparationTimeMinutes();
         updatedAt = Instant.now(clock);
 
         return Result.ok(null);
@@ -270,7 +277,7 @@ class Order {
 
         for (var newLine : newLines) {
             for (var removeLine : removeLines) {
-                if (newLine.getMenuItemId().equals(removeLine.menuItemId())) {
+                if (newLine.menuItemId().equals(removeLine.menuItemId())) {
                     return Result.failure("Cannot add and remove the same menu item in one operation.");
                 }
             }

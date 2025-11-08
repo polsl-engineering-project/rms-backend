@@ -46,10 +46,10 @@ class OrderLinesRemover {
         var lineFound = false;
 
         for (var currentLine : sortedCurrentLines) {
-            if (currentLine.getMenuItemId().equals(removeLine.menuItemId())) {
+            if (currentLine.menuItemId().equals(removeLine.menuItemId())) {
                 lineFound = true;
 
-                var quantityToRemove = Math.min(currentLine.getQuantity(), toBeRemovedLeft);
+                var quantityToRemove = Math.min(currentLine.quantity(), toBeRemovedLeft);
                 removeOrReplaceLine(snapshot, currentLine, quantityToRemove);
 
                 toBeRemovedLeft -= quantityToRemove;
@@ -63,10 +63,10 @@ class OrderLinesRemover {
     }
 
     private static void removeOrReplaceLine(List<OrderLine> snapshot, OrderLine currentLine, int quantityToRemove) {
-        if (quantityToRemove == currentLine.getQuantity()) {
+        if (quantityToRemove == currentLine.quantity()) {
             snapshot.remove(currentLine);
         } else {
-            var left = currentLine.getQuantity() - quantityToRemove;
+            var left = currentLine.quantity() - quantityToRemove;
             var newLine = createUpdatedLine(currentLine, left);
             snapshot.remove(currentLine);
             snapshot.add(newLine);
@@ -85,16 +85,16 @@ class OrderLinesRemover {
 
     private static List<OrderLine> sortByVersionDesc(List<OrderLine> currentLines) {
         return currentLines.stream()
-                .sorted((line1, line2) -> Long.compare(line2.getMenuItemVersion(), line1.getMenuItemVersion()))
+                .sorted((line1, line2) -> Long.compare(line2.menuItemVersion(), line1.menuItemVersion()))
                 .toList();
     }
 
     private static OrderLine createUpdatedLine(OrderLine currentLine, int leftQuantity) {
         return new OrderLine(
-                currentLine.getMenuItemId(),
+                currentLine.menuItemId(),
                 leftQuantity,
-                currentLine.getUnitPrice(),
-                currentLine.getMenuItemVersion()
+                currentLine.unitPrice(),
+                currentLine.menuItemVersion()
         );
     }
 }
