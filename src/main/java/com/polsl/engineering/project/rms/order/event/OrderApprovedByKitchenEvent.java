@@ -9,4 +9,13 @@ public record OrderApprovedByKitchenEvent(
         Instant approvedAt,
         Integer estimatedPreparationMinutes
 ) implements OrderEvent {
+    @Override
+    public OrderEventType getType() {
+        return OrderEventType.APPROVED_BY_KITCHEN;
+    }
+
+    @Override
+    public Instant getOccurredAt() {
+        return approvedAt();
+    }
 }

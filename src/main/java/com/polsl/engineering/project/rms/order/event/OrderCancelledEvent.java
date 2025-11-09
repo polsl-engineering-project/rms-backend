@@ -9,5 +9,13 @@ public record OrderCancelledEvent(
         Instant cancelledAt,
         String reason
 ) implements OrderEvent {
-}
+    @Override
+    public OrderEventType getType() {
+        return OrderEventType.CANCELLED;
+    }
 
+    @Override
+    public Instant getOccurredAt() {
+        return cancelledAt();
+    }
+}

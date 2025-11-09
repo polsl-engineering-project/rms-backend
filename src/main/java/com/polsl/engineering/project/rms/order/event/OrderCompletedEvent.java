@@ -8,5 +8,13 @@ public record OrderCompletedEvent(
         OrderId orderId,
         Instant completedAt
 ) implements OrderEvent {
-}
+    @Override
+    public OrderEventType getType() {
+        return OrderEventType.COMPLETED;
+    }
 
+    @Override
+    public Instant getOccurredAt() {
+        return completedAt();
+    }
+}

@@ -8,5 +8,13 @@ public record OrderDeliveryStartedEvent(
         OrderId orderId,
         Instant startedAt
 ) implements OrderEvent {
-}
+    @Override
+    public OrderEventType getType() {
+        return OrderEventType.DELIVERY_STARTED;
+    }
 
+    @Override
+    public Instant getOccurredAt() {
+        return startedAt();
+    }
+}

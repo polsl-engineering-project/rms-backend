@@ -17,5 +17,13 @@ public record DeliveryOrderPlacedEvent(
         CustomerInfo customerInfo,
         LocalTime scheduledFor
 ) implements OrderEvent {
-}
+    @Override
+    public OrderEventType getType() {
+        return OrderEventType.DELIVERY_ORDER_PLACED;
+    }
 
+    @Override
+    public Instant getOccurredAt() {
+        return placedAt();
+    }
+}

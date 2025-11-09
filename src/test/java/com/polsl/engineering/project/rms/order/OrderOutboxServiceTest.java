@@ -3,6 +3,7 @@ package com.polsl.engineering.project.rms.order;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.polsl.engineering.project.rms.order.event.OrderEvent;
+import com.polsl.engineering.project.rms.order.event.OrderEventType;
 import com.polsl.engineering.project.rms.order.vo.OrderId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +32,17 @@ class OrderOutboxServiceTest {
     @InjectMocks
     OrderOutboxService underTest;
 
-    private record DummyEvent(String foo) implements OrderEvent {}
+    private record DummyEvent(String foo) implements OrderEvent {
+        @Override
+        public OrderEventType getType() {
+            return OrderEventType.APPROVED_BY_FRONT_DESK;
+        }
+
+        @Override
+        public Instant getOccurredAt() {
+            return Instant.now();
+        }
+    }
 
     @Test
     @DisplayName("Given valid event_When persistEvent_Then saves serialized outbox event")
@@ -51,7 +64,7 @@ class OrderOutboxServiceTest {
 
         assertThat(saved).isNotNull();
         assertThat(saved.getOrderId()).isEqualTo(orderId.value());
-        assertThat(saved.getType()).isEqualTo(event.getClass().getSimpleName());
+        assertThat(saved.getType()).isEqualTo(OrderEventType.APPROVED_BY_FRONT_DESK.name());
         assertThat(saved.getPayload()).isEqualTo(expectedPayload);
         assertThat(saved.getCreatedAt()).isNotNull();
     }
@@ -90,7 +103,7 @@ class OrderOutboxServiceTest {
         verify(repository).save(captor.capture());
         var saved = captor.getValue();
 
-        assertThat(saved.getType()).isEqualTo(DummyEvent.class.getSimpleName());
+        assertThat(saved.getType()).isEqualTo(OrderEventType.APPROVED_BY_FRONT_DESK.name());
     }
 
 }

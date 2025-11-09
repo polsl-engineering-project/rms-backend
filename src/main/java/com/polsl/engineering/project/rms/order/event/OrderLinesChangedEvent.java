@@ -14,5 +14,13 @@ public record OrderLinesChangedEvent(
         List<OrderLineRemoval> removedLines,
         Integer updatedEstimatedPreparationMinutes
 ) implements OrderEvent {
-}
+    @Override
+    public OrderEventType getType() {
+        return OrderEventType.LINES_CHANGED;
+    }
 
+    @Override
+    public Instant getOccurredAt() {
+        return changedAt();
+    }
+}

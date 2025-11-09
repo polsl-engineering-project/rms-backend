@@ -20,7 +20,7 @@ public class OrderOutboxService {
     public void persistEvent(OrderId orderId, OrderEvent event) {
         try {
             String payload = objectMapper.writeValueAsString(event);
-            var outbox = OrderOutboxEvent.of(orderId, event.getClass().getSimpleName(), payload);
+            var outbox = OrderOutboxEvent.of(orderId, event.getType().name(), payload);
             repository.save(outbox);
         } catch (JsonProcessingException e) {
             throw new OrderOutboxPersistenceException("Failed to serialize outbox event", e);
