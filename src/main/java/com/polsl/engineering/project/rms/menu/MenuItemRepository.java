@@ -1,6 +1,5 @@
-package com.polsl.engineering.project.rms.menu.repositories;
+package com.polsl.engineering.project.rms.menu;
 
-import com.polsl.engineering.project.rms.menu.MenuItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
+interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 
     @Query("SELECT m FROM MenuItem m WHERE m.category.id = :categoryId")
     Page<MenuItem> findAllByCategoryId(@Param("categoryId") UUID categoryId, Pageable pageable);

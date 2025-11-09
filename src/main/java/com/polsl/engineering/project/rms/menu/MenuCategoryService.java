@@ -1,7 +1,6 @@
 package com.polsl.engineering.project.rms.menu;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.exception.NotUniqueMenuNameException;
-import com.polsl.engineering.project.rms.menu.repositories.MenuCategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,7 +10,7 @@ import static com.polsl.engineering.project.rms.menu.MenuUtils.*;
 
 @Service
 @RequiredArgsConstructor
-public class MenuCategoryService {
+class MenuCategoryService {
 
     private final MenuCategoryRepository menuCategoryRepository;
     private final MenuMapper menuMapper;

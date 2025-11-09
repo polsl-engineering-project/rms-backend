@@ -1,8 +1,6 @@
-package com.polsl.engineering.project.rms.menu.repositories;
+package com.polsl.engineering.project.rms.menu;
 
 import com.polsl.engineering.project.rms.ContainersEnvironment;
-import com.polsl.engineering.project.rms.menu.DataHelper;
-import com.polsl.engineering.project.rms.menu.MenuItem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

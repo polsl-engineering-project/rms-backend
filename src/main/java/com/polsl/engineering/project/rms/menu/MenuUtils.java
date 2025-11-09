@@ -2,10 +2,13 @@ package com.polsl.engineering.project.rms.menu;
 
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
 import com.polsl.engineering.project.rms.menu.exception.UuidCorruptionException;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
-public class MenuUtils {
+@RequiredArgsConstructor(access = AccessLevel.NONE)
+class MenuUtils {
     public static void validateIdOrThrow(UUID id, UUID requestId) {
         if (!id.equals(requestId)) {
             throw new UuidCorruptionException();
