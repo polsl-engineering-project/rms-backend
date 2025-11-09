@@ -1,11 +1,21 @@
 package com.polsl.engineering.project.rms.order.vo;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
 
 import java.io.Serializable;
 import java.util.UUID;
 
-public record OrderId(UUID value) implements Serializable {
+public record OrderId(@JsonValue UUID value) implements Serializable {
+
+    @JsonCreator
+    public OrderId {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
+    }
+
     public static OrderId generate() {
         return new OrderId(UUID.randomUUID());
     }
