@@ -1,14 +1,20 @@
 package com.polsl.engineering.project.rms.order;
 
+import com.polsl.engineering.project.rms.order.event.OrderEventType;
 import com.polsl.engineering.project.rms.order.vo.OrderId;
 import jakarta.persistence.*;
+import jdk.jfr.EventType;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+@Getter
 @Entity
-@Table(name = "order_outbox_event", indexes = {
+@Table(name = "order_outbox_events", indexes = {
         @Index(name = "idx_outbox_orderid", columnList = "order_id"),
         @Index(name = "idx_outbox_type_created", columnList = "type, created_at")
 })
@@ -21,8 +27,9 @@ public class OrderOutboxEvent {
     @Column(name = "order_id", nullable = false, updatable = false)
     private UUID orderId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, updatable = false)
-    private String type;
+    private OrderEventType type;
 
     @Lob
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
@@ -31,15 +38,15 @@ public class OrderOutboxEvent {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
+    @Setter(AccessLevel.PACKAGE)
+    @Column(name = "processed", nullable = false)
+    private boolean processed = false;
 
     protected OrderOutboxEvent() {
         // for JPA
     }
 
-    OrderOutboxEvent(UUID id, UUID orderId, String type, String payload, Instant createdAt) {
+    OrderOutboxEvent(UUID id, UUID orderId, OrderEventType type, String payload, Instant createdAt) {
         this.id = id;
         this.orderId = orderId;
         this.type = type;
@@ -47,25 +54,17 @@ public class OrderOutboxEvent {
         this.createdAt = createdAt;
     }
 
-    public static OrderOutboxEvent of(OrderId orderId, String type, String payload) {
+    public static OrderOutboxEvent of(OrderId orderId, OrderEventType type, String payload) {
         Objects.requireNonNull(orderId, "orderId");
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(payload, "payload");
         return new OrderOutboxEvent(UUID.randomUUID(), orderId.value(), type, payload, Instant.now());
     }
 
-    public UUID getId() { return id; }
-    public UUID getOrderId() { return orderId; }
-    public String getType() { return type; }
-    public String getPayload() { return payload; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Long getVersion() { return version; }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof OrderOutboxEvent)) return false;
-        OrderOutboxEvent that = (OrderOutboxEvent) o;
+        if (!(o instanceof OrderOutboxEvent that)) return false;
         return Objects.equals(id, that.id);
     }
 

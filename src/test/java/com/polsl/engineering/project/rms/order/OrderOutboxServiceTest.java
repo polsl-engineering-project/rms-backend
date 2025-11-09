@@ -64,7 +64,7 @@ class OrderOutboxServiceTest {
 
         assertThat(saved).isNotNull();
         assertThat(saved.getOrderId()).isEqualTo(orderId.value());
-        assertThat(saved.getType()).isEqualTo(OrderEventType.APPROVED_BY_FRONT_DESK.name());
+        assertThat(saved.getType()).isEqualTo(OrderEventType.APPROVED_BY_FRONT_DESK);
         assertThat(saved.getPayload()).isEqualTo(expectedPayload);
         assertThat(saved.getCreatedAt()).isNotNull();
     }
@@ -103,7 +103,7 @@ class OrderOutboxServiceTest {
         verify(repository).save(captor.capture());
         var saved = captor.getValue();
 
-        assertThat(saved.getType()).isEqualTo(OrderEventType.APPROVED_BY_FRONT_DESK.name());
+        assertThat(saved.getType()).isEqualTo(OrderEventType.APPROVED_BY_FRONT_DESK);
     }
 
 }
