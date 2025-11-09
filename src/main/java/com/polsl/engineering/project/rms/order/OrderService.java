@@ -27,6 +27,7 @@ class OrderService {
     private final MenuApi menuApi;
     private final OrderMapper mapper;
     private final Clock clock;
+    private final OrderOutboxService outboxService;
 
     @Transactional
     OrderPayloads.OrderPlacedResponse placePickUpOrder(OrderPayloads.PlacePickUpOrderRequest request) {
@@ -37,6 +38,8 @@ class OrderService {
 
         var order = result.getValue();
         jdbcRepository.saveNewOrder(order);
+
+        saveEvents(order);
 
         return mapper.toResponse(order);
     }
@@ -51,6 +54,8 @@ class OrderService {
         var order = result.getValue();
         jdbcRepository.saveNewOrder(order);
 
+        saveEvents(order);
+
         return mapper.toResponse(order);
     }
 
@@ -60,6 +65,7 @@ class OrderService {
         var result = order.approveByFrontDesk(clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
+        saveEvents(order);
     }
 
     @Transactional
@@ -69,6 +75,7 @@ class OrderService {
         var result = order.approveByKitchen(cmd, clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
+        saveEvents(order);
     }
 
     @Transactional
@@ -77,6 +84,7 @@ class OrderService {
         var result = order.markAsReady(clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
+        saveEvents(order);
     }
 
     @Transactional
@@ -85,6 +93,7 @@ class OrderService {
         var result = order.startDelivery(clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
+        saveEvents(order);
     }
 
     @Transactional
@@ -93,6 +102,7 @@ class OrderService {
         var result = order.complete(clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
+        saveEvents(order);
     }
 
     @Transactional
@@ -102,6 +112,7 @@ class OrderService {
         var result = order.cancel(cmd, clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
+        saveEvents(order);
     }
 
     @Transactional
@@ -129,6 +140,7 @@ class OrderService {
         validateActionResult(result);
 
         jdbcRepository.updateWithLines(order);
+        saveEvents(order);
     }
 
     private Order findByIdOrThrow(String id) {
@@ -172,6 +184,11 @@ class OrderService {
         return orderLines;
     }
 
-
+    private void saveEvents(Order order) {
+        var events = order.pullEvents();
+        for (var event : events) {
+            outboxService.persistEvent(order.getId(), event);
+        }
+    }
 
 }

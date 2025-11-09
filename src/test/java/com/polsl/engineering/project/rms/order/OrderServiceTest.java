@@ -6,6 +6,8 @@ import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
 import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
+import com.polsl.engineering.project.rms.order.event.OrderEvent;
+import com.polsl.engineering.project.rms.order.vo.OrderId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,9 @@ class OrderServiceTest {
 
     @Mock
     Clock clock;
+
+    @Mock
+    OrderOutboxService outboxService;
 
     @InjectMocks
     OrderService underTest;
@@ -76,6 +81,8 @@ class OrderServiceTest {
         assertThat(response.id()).isEqualTo(expectedUuid);
         verify(jdbcRepository).saveNewOrder(any(Order.class));
         verify(mapper).toResponse(any(Order.class));
+        // outbox should receive one persisted event (order placement)
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -95,6 +102,7 @@ class OrderServiceTest {
                 .hasMessageContaining(payloadLineId.toString());
 
         verify(jdbcRepository, never()).saveNewOrder(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -116,6 +124,7 @@ class OrderServiceTest {
                 .isInstanceOf(com.polsl.engineering.project.rms.order.exception.MenuItemVersionMismatchException.class);
 
         verify(jdbcRepository, never()).saveNewOrder(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -127,12 +136,17 @@ class OrderServiceTest {
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
         when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        // stub emitted events and id so outbox call can be verified
+        var eventMock = mock(OrderEvent.class);
+        when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(orderMock.getId()).thenReturn(OrderId.generate());
 
         //when
         underTest.approveByFrontDesk(orderId);
 
         //then
         verify(jdbcRepository).updateWithoutLines(orderMock);
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -149,6 +163,7 @@ class OrderServiceTest {
                 .hasMessageContaining(orderId);
 
         verify(jdbcRepository, never()).updateWithoutLines(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -166,6 +181,7 @@ class OrderServiceTest {
                 .isInstanceOf(com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException.class);
 
         verify(jdbcRepository, never()).updateWithoutLines(orderMock);
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -177,6 +193,10 @@ class OrderServiceTest {
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
         when(orderMock.changeOrderLines(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        // stub emitted events and id for outbox verification
+        var eventMock = mock(OrderEvent.class);
+        when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(orderMock.getId()).thenReturn(OrderId.generate());
 
         var removeLine = new OrderPayloads.RemoveLine(UUID.randomUUID(), 1);
         var request = new OrderPayloads.ChangeOrderLinesRequest(List.of(), List.of(removeLine), 10);
@@ -186,7 +206,7 @@ class OrderServiceTest {
 
         //then
         verify(jdbcRepository).updateWithLines(orderMock);
+        verify(outboxService).persistEvent(any(), any());
     }
 
 }
-
