@@ -1,7 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.cmd.AddItemsToBillCommand;
-import com.polsl.engineering.project.rms.bill.cmd.OpenBillCommand;
+import com.polsl.engineering.project.rms.bill.cmd.PayBillCommand;
 import com.polsl.engineering.project.rms.bill.cmd.RemoveItemsFromBillCommand;
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
@@ -10,22 +10,22 @@ import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.common.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
+import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import jakarta.transaction.Transactional;
-import lombok.Builder;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 class BillService {
+
+    private static final Integer DEFAULT_PAGE_SIZE = 20;
+    private static final Integer DEFAULT_PAGE_NUMBER = 0;
 
     private final BillRepository billRepository;
     private final MenuApi menuApi;
@@ -78,10 +78,47 @@ class BillService {
         billRepository.updateWithoutLines(bill);
     }
 
+    @Transactional
+    void payBill(String billId, BillPayloads.PayBillRequest request) {
+        var bill = findByIdOrThrow(billId);
+        var cmd = new PayBillCommand(request.paymentMethod(), Money.of(request.paidAmount()));
+        var result = bill.pay(cmd, clock);
+        validateActionResult(result);
+        billRepository.updateWithoutLines(bill);
+    }
+
     BillPayloads.BillPageResponse searchBills(BillPayloads.BillSearchRequest request) {
-        var criteria = request.toCriteria();
-        var page = billRepository.searchBills(criteria, request.page(), request.size());
-        return BillPayloads.BillPageResponse.from(page);
+        var page = validatePage(request.page());
+        var size = validateSize(request.size());
+        return billRepository.searchBills(request, page, size);
+    }
+
+    BillPayloads.BillSummaryWithLinesResponse searchBill(String id){
+        var bill =  findByIdOrThrow(id);
+
+        var menuItemIds = bill.getLines().stream()
+                .map(BillLine::menuItemId)
+                .map(UUID::fromString)
+                .toList();
+
+        var snapshotsMap = menuApi.getSnapshotsForOrderByIds(menuItemIds);
+
+        var billLines = bill.getLines().stream()
+                .map(line -> {
+                    var menuItemId = UUID.fromString(line.menuItemId());
+                    var name = Optional.ofNullable(snapshotsMap.get(menuItemId))
+                            .map(MenuItemSnapshotForOrder::name)
+                            .orElseThrow(() -> new ResourceNotFoundException("MenuItem with id %s not found".formatted(menuItemId)));
+                    return new BillPayloads.BillLineResponse(
+                            menuItemId,
+                            line.quantity(),
+                            name,
+                            line.menuItemVersion()
+                    );
+                })
+                .toList();
+
+        return mapper.toSummaryWithLinesResponse(bill, billLines);
     }
 
     private Bill findByIdOrThrow(String id) {
@@ -124,4 +161,18 @@ class BillService {
 
         return billLines;
     }
+
+    private int validatePage(Integer pageNumber) {
+        return (pageNumber == null || pageNumber < 0)
+                ? DEFAULT_PAGE_NUMBER
+                : pageNumber;
+    }
+
+    private int validateSize(Integer size) {
+        return (size == null || size < 1)
+                ? DEFAULT_PAGE_SIZE
+                : size;
+    }
+
+
 }

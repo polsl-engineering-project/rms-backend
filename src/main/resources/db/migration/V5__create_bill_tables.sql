@@ -2,12 +2,15 @@ CREATE TABLE bills (
                        id UUID PRIMARY KEY,
                        table_number INTEGER NOT NULL,
                        bill_status VARCHAR(20) NOT NULL,
+                       payment_method VARCHAR(20),
                        waiter_first_name VARCHAR(100) NOT NULL,
                        waiter_last_name VARCHAR(100) NOT NULL,
                        waiter_employee_id VARCHAR(50) NOT NULL,
                        total_amount DECIMAL(10, 2) NOT NULL,
+                       paid_amount DECIMAL(10,2),
                        opened_at TIMESTAMP NOT NULL,
                        closed_at TIMESTAMP,
+                       paid_at TIMESTAMP,
                        updated_at TIMESTAMP NOT NULL,
                        version BIGINT NOT NULL DEFAULT 0
 );

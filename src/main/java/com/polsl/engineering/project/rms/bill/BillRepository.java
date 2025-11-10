@@ -2,6 +2,7 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.common.db.QueryLogging;
+import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -26,15 +27,18 @@ class BillRepository {
                 id,
                 table_number,
                 bill_status,
+                payment_method,
                 waiter_first_name,
                 waiter_last_name,
                 waiter_employee_id,
                 total_amount,
+                paid_amount,
                 opened_at,
                 closed_at,
+                paid_at,
                 updated_at,
                 version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String BILL_UPDATE_SQL = """
@@ -42,12 +46,15 @@ class BillRepository {
             SET
                 table_number = ?,
                 bill_status = ?,
+                payment_method = ?,
                 waiter_first_name = ?,
                 waiter_last_name = ?,
                 waiter_employee_id = ?,
                 total_amount = ?,
+                paid_amount = ?,
                 opened_at = ?,
                 closed_at = ?,
+                paid_at = ?,
                 updated_at = ?,
                 version = version + 1
             WHERE id = ? AND version = ?
@@ -85,11 +92,17 @@ class BillRepository {
                 var tableNumber = TableNumber.of(rs.getInt("table_number"));
                 var status = BillStatus.valueOf(rs.getString("bill_status"));
 
+                var paymentMethod = Optional.ofNullable(rs.getString("payment_method"))
+                        .map(PaymentMethod::valueOf)
+                        .orElse(null);
+
                 var waiterInfo = dbMapper.mapWaiterInfo(rs);
                 var totalAmount = dbMapper.mapMoney(rs, "total_amount");
+                var paidAmount = dbMapper.mapMoney(rs, "paid_amount");
 
                 var openedAt = dbMapper.mapInstant(rs, "opened_at");
                 var closedAt = dbMapper.mapInstant(rs, "closed_at");
+                var paidAt = dbMapper.mapInstant(rs, "paid_at");
                 var updatedAt = dbMapper.mapInstant(rs, "updated_at");
 
                 var version = rs.getLong("version");
@@ -100,11 +113,14 @@ class BillRepository {
                         idVo,
                         tableNumber,
                         status,
+                        paymentMethod,
                         lines,
                         waiterInfo,
                         totalAmount,
+                        paidAmount,
                         openedAt,
                         closedAt,
+                        paidAt,
                         updatedAt,
                         version
                 );
@@ -148,44 +164,55 @@ class BillRepository {
         insertLines(bill.getId().value(), bill.getLines());
     }
 
-    public BillPayloads.BillPage searchBills(BillPayloads.BillSearchCriteria criteria, int page, int size) {
+    public BillPayloads.BillPageResponse searchBills(BillPayloads.BillSearchRequest criteria, int page, int size) {
         var queryBuilder = new BillQueryBuilder(criteria);
         var countSql = queryBuilder.buildCountQuery();
         var selectSql = queryBuilder.buildSelectQuery(page, size);
-        var params = queryBuilder.getParams();
+        var selectParams = queryBuilder.getSelectParams();
+        var countParams =  queryBuilder.getCountParams();
 
-        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, countSql, params.toArray());
-        Long total = jdbcTemplate.queryForObject(countSql, Long.class, params.toArray());
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, countSql, countParams.toArray());
+        Long total = jdbcTemplate.queryForObject(countSql, Long.class, countParams.toArray());
 
-        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, selectSql, params.toArray());
-        List<BillPayloads.BillSummary> content = jdbcTemplate.query(selectSql, (rs, _) -> {
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, selectSql, selectParams.toArray());
+        List<BillPayloads.BillSummaryResponse> content = jdbcTemplate.query(selectSql, (rs, _) -> {
             var id = rs.getObject("id", UUID.class);
             var tableNumber = rs.getInt("table_number");
             var status = BillStatus.valueOf(rs.getString("bill_status"));
+            var paymentMethod = Optional.ofNullable(rs.getString("payment_method")).map(PaymentMethod::valueOf).orElse(null);
             var waiterName = rs.getString("waiter_first_name") + " " + rs.getString("waiter_last_name");
             var waiterEmployeeId = rs.getString("waiter_employee_id");
             var totalAmount = dbMapper.mapMoney(rs, "total_amount");
+            var paidAmount = dbMapper.mapMoney(rs, "paid_amount");
             var itemCount = rs.getInt("item_count");
             var openedAt = dbMapper.mapInstant(rs, "opened_at");
             var closedAt = dbMapper.mapInstant(rs, "closed_at");
+            var paid_at = dbMapper.mapInstant(rs, "paid_at");
             var updatedAt = dbMapper.mapInstant(rs, "updated_at");
 
-            return new BillPayloads.BillSummary(
+            return new BillPayloads.BillSummaryResponse(
                     id,
                     tableNumber,
                     status,
+                    paymentMethod,
                     waiterName,
                     waiterEmployeeId,
-                    totalAmount,
+                    totalAmount.amount(),
+                    paidAmount.amount(),
                     itemCount,
                     openedAt,
                     closedAt,
+                    paid_at,
                     updatedAt
             );
-        }, params.toArray());
+        }, selectParams.toArray());
 
-        int totalPages = (int) Math.ceil((double) total / size);
-        return new BillPayloads.BillPage(content, page, size, total, totalPages);
+        var totalPages = (int) Math.ceil((double) total / size);
+        var isFirst = page == 0;
+        var isLast = page == totalPages;
+        var hasPrevious = page > 0;
+        var hasNext = page < totalPages - 1;
+        return new BillPayloads.BillPageResponse(content, page, size, total, totalPages, isFirst, isLast, hasPrevious, hasNext);
     }
 
     private void insertLines(UUID billId, List<BillLine> lines) {

@@ -33,4 +33,8 @@ public record Money(BigDecimal amount) {
     public Money multiply(int multiplier) {
         return new Money(this.amount.multiply(BigDecimal.valueOf(multiplier)));
     }
+
+    public boolean isLessThan(Money other) {
+        return this.amount.compareTo(other.amount) < 0;
+    }
 }

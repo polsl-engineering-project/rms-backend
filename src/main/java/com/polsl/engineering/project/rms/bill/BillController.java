@@ -29,6 +29,15 @@ class BillController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Search bill by id")
+    @ApiResponse(responseCode = "200", description = "Bill retrieved successfully",
+            content = @Content(schema = @Schema(implementation = BillPayloads.BillSummaryResponse.class)))
+    @GetMapping("{id}")
+    ResponseEntity<BillPayloads.BillSummaryWithLinesResponse> searchBill(@PathVariable("id") String id) {
+        var response = billService.searchBill(id);
+        return ResponseEntity.ok(response);
+    }
+
     @Operation(summary = "Open a new bill for a table")
     @ApiResponse(responseCode = "201", description = "Bill opened successfully",
             content = @Content(schema = @Schema(implementation = BillPayloads.BillOpenedResponse.class)))
@@ -79,6 +88,18 @@ class BillController {
     @PostMapping("/{id}/close")
     ResponseEntity<Void> closeBill(@PathVariable("id") String id) {
         billService.closeBill(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Pay a bill")
+    @ApiResponse(responseCode = "204", description = "Bill payed successfully")
+    @ApiResponse(responseCode = "404", description = "Bill not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @PostMapping("/{id}/pay")
+    ResponseEntity<Void> payBill(
+            @PathVariable("id") String id,
+            @Valid @RequestBody BillPayloads.PayBillRequest payBillRequest) {
+        billService.payBill(id, payBillRequest);
         return ResponseEntity.noContent().build();
     }
 }

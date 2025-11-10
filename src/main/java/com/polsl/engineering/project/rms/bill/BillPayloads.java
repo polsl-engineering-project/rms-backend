@@ -1,16 +1,14 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
-import com.polsl.engineering.project.rms.bill.vo.Money;
 import com.polsl.engineering.project.rms.bill.vo.WaiterInfo;
+import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
-import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,6 +44,12 @@ public class BillPayloads {
     ) {
     }
 
+    public record PayBillRequest(
+            @NotNull PaymentMethod paymentMethod,
+            @NotNull Double paidAmount
+    ){
+    }
+
     public record BillOpenedResponse(
             UUID id,
             Integer tableNumber
@@ -55,10 +59,13 @@ public class BillPayloads {
     @Builder
     public record BillSearchRequest(
             List<BillStatus> statuses,
-            LocalDate openedFrom,
-            LocalDate openedTo,
-            LocalDate closedFrom,
-            LocalDate closedTo,
+            Instant openedFrom,
+            Instant openedTo,
+            Instant closedFrom,
+            Instant closedTo,
+            Instant paidFrom,
+            Instant paidTo,
+            PaymentMethod paymentMethod,
             String waiterEmployeeId,
             String waiterFirstName,
             String waiterLastName,
@@ -69,8 +76,11 @@ public class BillPayloads {
             BigDecimal minTotalAmount,
             @PositiveOrZero
             BigDecimal maxTotalAmount,
+            @PositiveOrZero
+            BigDecimal minPaidAmount,
+            @PositiveOrZero
+            BigDecimal maxPaidAmount,
             String menuItemId,
-            String searchText,
             BillSortField sortBy,
             SortDirection sortDirection,
             @Min(0)
@@ -84,78 +94,50 @@ public class BillPayloads {
             if (sortBy == null) sortBy = BillSortField.OPENED_AT;
             if (sortDirection == null) sortDirection = SortDirection.DESC;
         }
-
-        public BillSearchCriteria toCriteria() {
-            return BillSearchCriteria.builder()
-                    .statuses(statuses)
-                    .openedFrom(openedFrom)
-                    .openedTo(openedTo)
-                    .closedFrom(closedFrom)
-                    .closedTo(closedTo)
-                    .waiterEmployeeId(waiterEmployeeId)
-                    .waiterFirstName(waiterFirstName)
-                    .waiterLastName(waiterLastName)
-                    .tableNumber(tableNumber)
-                    .tableNumbers(tableNumbers)
-                    .minTotalAmount(minTotalAmount)
-                    .maxTotalAmount(maxTotalAmount)
-                    .menuItemId(menuItemId)
-                    .searchText(searchText)
-                    .sortBy(sortBy)
-                    .sortDirection(sortDirection)
-                    .build();
-        }
     }
 
-    record BillSummary(
-            UUID id,
-            Integer tableNumber,
-            BillStatus status,
-            String waiterName,
-            String waiterEmployeeId,
-            Money totalAmount,
-            Integer itemCount,
-            Instant openedAt,
-            Instant closedAt,
-            Instant updatedAt
-    ) {
-    }
 
     public record BillSummaryResponse(
             UUID id,
             Integer tableNumber,
             BillStatus status,
+            PaymentMethod paymentMethod,
             String waiterName,
             String waiterEmployeeId,
             BigDecimal totalAmount,
+            BigDecimal paidAmount,
             Integer itemCount,
             Instant openedAt,
             Instant closedAt,
+            Instant paidAt,
             Instant updatedAt
     ) {
-        static BillSummaryResponse from(BillSummary summary) {
-            return new BillSummaryResponse(
-                    summary.id(),
-                    summary.tableNumber(),
-                    summary.status(),
-                    summary.waiterName(),
-                    summary.waiterEmployeeId(),
-                    summary.totalAmount().amount(),
-                    summary.itemCount(),
-                    summary.openedAt(),
-                    summary.closedAt(),
-                    summary.updatedAt()
-            );
-        }
     }
 
-    record BillPage(
-            List<BillSummary> content,
-            int pageNumber,
-            int pageSize,
-            long totalElements,
-            int totalPages
+    public record BillSummaryWithLinesResponse(
+            UUID id,
+            Integer tableNumber,
+            BillStatus status,
+            PaymentMethod paymentMethod,
+            String waiterName,
+            String waiterEmployeeId,
+            BigDecimal totalAmount,
+            BigDecimal paidAmount,
+            List<BillLineResponse> billLines,
+            Instant openedAt,
+            Instant closedAt,
+            Instant paidAt,
+            Instant updatedAt
     ) {
+
+    }
+
+    public record BillLineResponse(
+            UUID menuItemId,
+            int quantity,
+            String name,
+            long version
+    ){
     }
 
     public record BillPageResponse(
@@ -169,56 +151,15 @@ public class BillPayloads {
             boolean hasPrevious,
             boolean hasNext
     ) {
-        static BillPageResponse from(BillPage page) {
-            var content = page.content().stream()
-                    .map(BillSummaryResponse::from)
-                    .toList();
-
-            return new BillPageResponse(
-                    content,
-                    page.pageNumber(),
-                    page.pageSize(),
-                    page.totalElements(),
-                    page.totalPages(),
-                    page.pageNumber() == 0,
-                    page.pageNumber() == page.totalPages() - 1,
-                    page.pageNumber() > 0,
-                    page.pageNumber() < page.totalPages() - 1
-            );
-        }
-    }
-
-    @Getter
-    @Builder
-    public class BillSearchCriteria {
-        private List<BillStatus> statuses;
-        private LocalDate openedFrom;
-        private LocalDate openedTo;
-        private LocalDate closedFrom;
-        private LocalDate closedTo;
-        private Instant openedAfter;
-        private Instant openedBefore;
-        private Instant closedAfter;
-        private Instant closedBefore;
-        private String waiterEmployeeId;
-        private String waiterFirstName;
-        private String waiterLastName;
-        private Integer tableNumber;
-        private List<Integer> tableNumbers;
-        private BigDecimal minTotalAmount;
-        private BigDecimal maxTotalAmount;
-        private String menuItemId;
-        private String searchText;
-        private BillSortField sortBy;
-        private SortDirection sortDirection;
-
     }
 
     public enum BillSortField {
         OPENED_AT,
         CLOSED_AT,
+        PAID_AT,
         UPDATED_AT,
         TOTAL_AMOUNT,
+        PAID_AMOUNT,
         TABLE_NUMBER,
         WAITER_LAST_NAME
     }

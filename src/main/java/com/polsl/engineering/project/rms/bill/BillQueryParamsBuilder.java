@@ -33,17 +33,23 @@ class BillQueryParamsBuilder {
     private Object[] buildCommonParams(Bill bill) {
         var openedAt = bill.getOpenedAt() == null ? null : Timestamp.from(bill.getOpenedAt());
         var closedAt = bill.getClosedAt() == null ? null : Timestamp.from(bill.getClosedAt());
+        var paidAt = bill.getPaidAt() == null ? null : Timestamp.from(bill.getPaidAt());
         var updatedAt = bill.getUpdatedAt() == null ? null : Timestamp.from(bill.getUpdatedAt());
+        var paymentMethod = bill.getPaymentMethod() == null ? null : bill.getPaymentMethod().name();
+        var paidAmount = bill.getPaidAmount() == null ? null : bill.getPaidAmount().amount();
 
         return new Object[]{
                 bill.getTableNumber().value(),
                 bill.getStatus().name(),
+                paymentMethod,
                 bill.getWaiterInfo().firstName(),
                 bill.getWaiterInfo().lastName(),
                 bill.getWaiterInfo().employeeId(),
                 bill.getTotalAmount().amount(),
+                paidAmount,
                 openedAt,
                 closedAt,
+                paidAt,
                 updatedAt
         };
     }

@@ -9,8 +9,9 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 @Component
 class BillDbMapper {
@@ -28,7 +29,7 @@ class BillDbMapper {
 
     Instant mapInstant(ResultSet rs, String column) {
         try {
-            Timestamp ts = rs.getTimestamp(column);
+            var ts = rs.getTimestamp(column, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
             return ts == null ? null : ts.toInstant();
         } catch (SQLException e) {
             throw new DataRetrievalFailureException("Failed to map timestamp column '" + column + "' from ResultSet", e);

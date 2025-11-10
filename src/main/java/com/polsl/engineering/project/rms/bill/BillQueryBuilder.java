@@ -4,17 +4,20 @@ import lombok.Getter;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 class BillQueryBuilder {
 
-    private final BillPayloads.BillSearchCriteria criteria;
-    private final List<Object> params = new ArrayList<>();
+    private final BillPayloads.BillSearchRequest criteria;
+    private final List<Object> selectParams = new ArrayList<>();
+    private final List<Object> countParams = new ArrayList<>();
 
-    BillQueryBuilder(BillPayloads.BillSearchCriteria criteria) {
+    BillQueryBuilder(BillPayloads.BillSearchRequest criteria) {
         this.criteria = criteria;
     }
 
@@ -26,7 +29,7 @@ class BillQueryBuilder {
                 """);
 
         appendJoins(sql);
-        appendWhereClause(sql);
+        appendWhereClause(sql, countParams);
 
         return sql.toString();
     }
@@ -38,23 +41,26 @@ class BillQueryBuilder {
                     b.id,
                     b.table_number,
                     b.bill_status,
+                    b.payment_method,
                     b.waiter_first_name,
                     b.waiter_last_name,
                     b.waiter_employee_id,
                     b.total_amount,
+                    b.paid_amount,
                     b.opened_at,
                     b.closed_at,
+                    b.paid_at,
                     b.updated_at,
                     COALESCE(COUNT(bl.id), 0) as item_count
                 FROM bills b
                 LEFT JOIN bill_lines bl ON b.id = bl.bill_id
                 """);
 
-        appendWhereClause(sql);
+        appendWhereClause(sql, selectParams);
 
-        sql.append("\nGROUP BY b.id, b.table_number, b.bill_status, b.waiter_first_name, ")
-                .append("b.waiter_last_name, b.waiter_employee_id, b.total_amount, ")
-                .append("b.opened_at, b.closed_at, b.updated_at");
+        sql.append("\nGROUP BY b.id, b.table_number, b.bill_status, b.payment_method, b.waiter_first_name, ")
+                .append("b.waiter_last_name, b.waiter_employee_id, b.total_amount, b.paid_amount, ")
+                .append("b.opened_at, b.closed_at, b.paid_at, b.updated_at");
 
         appendOrderBy(sql);
         appendPagination(sql, page, size);
@@ -63,98 +69,96 @@ class BillQueryBuilder {
     }
 
     private void appendJoins(StringBuilder sql) {
-        if (criteria.getMenuItemId() != null && !criteria.getMenuItemId().isBlank()) {
+        if (criteria.menuItemId() != null && !criteria.menuItemId().isBlank()) {
             sql.append("INNER JOIN bill_lines bl ON b.id = bl.bill_id\n");
         }
     }
 
-    private void appendWhereClause(StringBuilder sql) {
+    private void appendWhereClause(StringBuilder sql, List<Object> params) {
         List<String> conditions = new ArrayList<>();
 
-        if (criteria.getStatuses() != null && !criteria.getStatuses().isEmpty()) {
-            var placeholders = String.join(", ", "?".repeat(criteria.getStatuses().size()).split(""));
+        if (criteria.statuses() != null && !criteria.statuses().isEmpty()) {
+            var placeholders = String.join(", ", "?".repeat(criteria.statuses().size()).split(""));
             conditions.add("b.bill_status IN (" + placeholders + ")");
-            criteria.getStatuses().forEach(status -> params.add(status.name()));
+            criteria.statuses().forEach(status -> params.add(status.name()));
         }
 
-        if (criteria.getOpenedFrom() != null) {
+        if (criteria.paymentMethod() != null) {
+            conditions.add("b.payment_method = ?");
+            params.add(criteria.paymentMethod().name());
+        }
+
+        if (criteria.openedFrom() != null) {
             conditions.add("b.opened_at >= ?");
-            params.add(toTimestamp(criteria.getOpenedFrom(), true));
+            params.add(LocalDateTime.ofInstant(criteria.openedFrom(), ZoneOffset.UTC));
         }
-        if (criteria.getOpenedTo() != null) {
-            conditions.add("b.opened_at < ?");
-            params.add(toTimestamp(criteria.getOpenedTo().plusDays(1), true));
-        }
-
-        if (criteria.getOpenedAfter() != null) {
-            conditions.add("b.opened_at >= ?");
-            params.add(Timestamp.from(criteria.getOpenedAfter()));
-        }
-        if (criteria.getOpenedBefore() != null) {
-            conditions.add("b.opened_at < ?");
-            params.add(Timestamp.from(criteria.getOpenedBefore()));
+        if (criteria.openedTo() != null) {
+            conditions.add("b.opened_at <= ?");
+            params.add(LocalDateTime.ofInstant(criteria.openedTo(), ZoneOffset.UTC));
         }
 
-        if (criteria.getClosedFrom() != null) {
+        if (criteria.closedFrom() != null) {
             conditions.add("b.closed_at >= ?");
-            params.add(toTimestamp(criteria.getClosedFrom(), true));
+            params.add(LocalDateTime.ofInstant(criteria.closedFrom(), ZoneOffset.UTC));
         }
-        if (criteria.getClosedTo() != null) {
-            conditions.add("b.closed_at < ?");
-            params.add(toTimestamp(criteria.getClosedTo().plusDays(1), true));
-        }
-
-        if (criteria.getClosedAfter() != null) {
-            conditions.add("b.closed_at >= ?");
-            params.add(Timestamp.from(criteria.getClosedAfter()));
-        }
-        if (criteria.getClosedBefore() != null) {
-            conditions.add("b.closed_at < ?");
-            params.add(Timestamp.from(criteria.getClosedBefore()));
+        if (criteria.closedTo() != null) {
+            conditions.add("b.closed_at <= ?");
+            params.add(LocalDateTime.ofInstant(criteria.closedTo(), ZoneOffset.UTC));
         }
 
-        if (criteria.getWaiterEmployeeId() != null && !criteria.getWaiterEmployeeId().isBlank()) {
+        if (criteria.paidFrom() != null) {
+            conditions.add("b.paid_at >= ?");
+            params.add(LocalDateTime.ofInstant(criteria.paidFrom(), ZoneOffset.UTC));
+        }
+        if (criteria.paidTo() != null) {
+            conditions.add("b.paid_at <= ?");
+            params.add(LocalDateTime.ofInstant(criteria.paidTo(), ZoneOffset.UTC));
+        }
+
+        if (criteria.waiterEmployeeId() != null && !criteria.waiterEmployeeId().isBlank()) {
             conditions.add("b.waiter_employee_id = ?");
-            params.add(criteria.getWaiterEmployeeId());
+            params.add(criteria.waiterEmployeeId());
         }
-        if (criteria.getWaiterFirstName() != null && !criteria.getWaiterFirstName().isBlank()) {
+        if (criteria.waiterFirstName() != null && !criteria.waiterFirstName().isBlank()) {
             conditions.add("LOWER(b.waiter_first_name) LIKE ?");
-            params.add("%" + criteria.getWaiterFirstName().toLowerCase() + "%");
+            params.add("%" + criteria.waiterFirstName().toLowerCase() + "%");
         }
-        if (criteria.getWaiterLastName() != null && !criteria.getWaiterLastName().isBlank()) {
+        if (criteria.waiterLastName() != null && !criteria.waiterLastName().isBlank()) {
             conditions.add("LOWER(b.waiter_last_name) LIKE ?");
-            params.add("%" + criteria.getWaiterLastName().toLowerCase() + "%");
+            params.add("%" + criteria.waiterLastName().toLowerCase() + "%");
         }
 
-        if (criteria.getTableNumber() != null) {
+        if (criteria.tableNumber() != null) {
             conditions.add("b.table_number = ?");
-            params.add(criteria.getTableNumber());
+            params.add(criteria.tableNumber());
         }
-        if (criteria.getTableNumbers() != null && !criteria.getTableNumbers().isEmpty()) {
-            var placeholders = String.join(", ", "?".repeat(criteria.getTableNumbers().size()).split(""));
+        if (criteria.tableNumbers() != null && !criteria.tableNumbers().isEmpty()) {
+            var placeholders = String.join(", ", "?".repeat(criteria.tableNumbers().size()).split(""));
             conditions.add("b.table_number IN (" + placeholders + ")");
-            criteria.getTableNumbers().forEach(params::add);
+            criteria.tableNumbers().forEach(params::add);
         }
 
-        if (criteria.getMinTotalAmount() != null) {
+        if (criteria.minTotalAmount() != null) {
             conditions.add("b.total_amount >= ?");
-            params.add(criteria.getMinTotalAmount());
+            params.add(criteria.minTotalAmount());
         }
-        if (criteria.getMaxTotalAmount() != null) {
+        if (criteria.maxTotalAmount() != null) {
             conditions.add("b.total_amount <= ?");
-            params.add(criteria.getMaxTotalAmount());
+            params.add(criteria.maxTotalAmount());
         }
 
-        if (criteria.getMenuItemId() != null && !criteria.getMenuItemId().isBlank()) {
+        if (criteria.minPaidAmount() != null) {
+            conditions.add("b.paid_amount >= ?");
+            params.add(criteria.minPaidAmount());
+        }
+        if (criteria.maxPaidAmount() != null) {
+            conditions.add("b.paid_amount <= ?");
+            params.add(criteria.maxPaidAmount());
+        }
+
+        if (criteria.menuItemId() != null && !criteria.menuItemId().isBlank()) {
             conditions.add("bl.menu_item_id = ?");
-            params.add(criteria.getMenuItemId());
-        }
-
-        if (criteria.getSearchText() != null && !criteria.getSearchText().isBlank()) {
-            conditions.add("(LOWER(b.waiter_first_name) LIKE ? OR LOWER(b.waiter_last_name) LIKE ?)");
-            String searchPattern = "%" + criteria.getSearchText().toLowerCase() + "%";
-            params.add(searchPattern);
-            params.add(searchPattern);
+            params.add(criteria.menuItemId());
         }
 
         if (!conditions.isEmpty()) {
@@ -163,11 +167,11 @@ class BillQueryBuilder {
     }
 
     private void appendOrderBy(StringBuilder sql) {
-        var sortBy = criteria.getSortBy() != null
-                ? criteria.getSortBy()
+        var sortBy = criteria.sortBy() != null
+                ? criteria.sortBy()
                 : BillPayloads.BillSortField.OPENED_AT;
-        var direction = criteria.getSortDirection() != null
-                ? criteria.getSortDirection()
+        var direction = criteria.sortDirection() != null
+                ? criteria.sortDirection()
                 : BillPayloads.SortDirection.DESC;
 
         sql.append("\nORDER BY ");
@@ -175,8 +179,10 @@ class BillQueryBuilder {
         switch (sortBy) {
             case OPENED_AT -> sql.append("b.opened_at");
             case CLOSED_AT -> sql.append("b.closed_at");
+            case PAID_AT ->  sql.append("b.paid_at");
             case UPDATED_AT -> sql.append("b.updated_at");
             case TOTAL_AMOUNT -> sql.append("b.total_amount");
+            case PAID_AMOUNT -> sql.append("b.paid_amount");
             case TABLE_NUMBER -> sql.append("b.table_number");
             case WAITER_LAST_NAME -> sql.append("b.waiter_last_name, b.waiter_first_name");
         }
@@ -186,14 +192,8 @@ class BillQueryBuilder {
 
     private void appendPagination(StringBuilder sql, int page, int size) {
         sql.append("\nLIMIT ? OFFSET ?");
-        params.add(size);
-        params.add(page * size);
+        selectParams.add(size);
+        selectParams.add(page * size);
     }
 
-    private Timestamp toTimestamp(LocalDate date, boolean startOfDay) {
-        var instant = startOfDay
-                ? date.atStartOfDay(ZoneId.systemDefault()).toInstant()
-                : date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        return Timestamp.from(instant);
-    }
 }

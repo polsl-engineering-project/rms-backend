@@ -26,7 +26,6 @@ import java.time.Clock;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Role name constants to avoid duplicated literals and IDE warnings
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String ROLE_MANAGER = "MANAGER";
     private static final String ROLE_WAITER = "WAITER";
@@ -53,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/orders/*/approve/kitchen").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_COOK)
                         // Mark as ready - any authenticated user
                         .requestMatchers("/api/v1/orders/*/ready").authenticated()
+                            //todo change permission
+                        .requestMatchers("/api/v1/bills/**").permitAll()
 
                         // Keep existing restrictions for menu/users
                         .requestMatchers("/api/v1/menu/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
