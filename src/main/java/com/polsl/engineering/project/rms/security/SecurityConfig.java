@@ -52,8 +52,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/orders/*/approve/kitchen").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_COOK)
                         // Mark as ready - any authenticated user
                         .requestMatchers("/api/v1/orders/*/ready").authenticated()
-                            //todo change permission
-                        .requestMatchers("/api/v1/bills/**").permitAll()
+
+                        .requestMatchers("/api/v1/bills/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_WAITER)
 
                         // Keep existing restrictions for menu/users
                         .requestMatchers("/api/v1/menu/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
