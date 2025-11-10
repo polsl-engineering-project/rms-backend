@@ -94,6 +94,7 @@ class BillLinesRemover {
                 currentLine.menuItemId(),
                 leftQuantity,
                 currentLine.unitPrice(),
+                currentLine.menuItemName(),
                 currentLine.menuItemVersion()
         );
     }

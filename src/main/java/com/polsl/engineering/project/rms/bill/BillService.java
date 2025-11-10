@@ -10,14 +10,12 @@ import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.common.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
-import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -34,6 +32,8 @@ class BillService {
 
     @Transactional
     BillPayloads.BillOpenedResponse openBill(BillPayloads.OpenBillRequest request) {
+        validateTableNumer(request.tableNumber());
+
         var billLines = getBillLines(request.initialLines());
         var cmd = mapper.toCommand(request, billLines);
         var result = Bill.open(cmd, clock);
@@ -96,23 +96,13 @@ class BillService {
     BillPayloads.BillSummaryWithLinesResponse searchBill(String id){
         var bill =  findByIdOrThrow(id);
 
-        var menuItemIds = bill.getLines().stream()
-                .map(BillLine::menuItemId)
-                .map(UUID::fromString)
-                .toList();
-
-        var snapshotsMap = menuApi.getSnapshotsForOrderByIds(menuItemIds);
-
         var billLines = bill.getLines().stream()
                 .map(line -> {
                     var menuItemId = UUID.fromString(line.menuItemId());
-                    var name = Optional.ofNullable(snapshotsMap.get(menuItemId))
-                            .map(MenuItemSnapshotForOrder::name)
-                            .orElseThrow(() -> new ResourceNotFoundException("MenuItem with id %s not found".formatted(menuItemId)));
                     return new BillPayloads.BillLineResponse(
                             menuItemId,
                             line.quantity(),
-                            name,
+                            line.menuItemName(),
                             line.menuItemVersion()
                     );
                 })
@@ -154,6 +144,7 @@ class BillService {
                     lineFromRequest.menuItemId().toString(),
                     lineFromRequest.quantity(),
                     new Money(snapshot.price()),
+                    snapshot.name(),
                     snapshot.version()
             );
             billLines.add(billLine);
@@ -172,6 +163,14 @@ class BillService {
         return (size == null || size < 1)
                 ? DEFAULT_PAGE_SIZE
                 : size;
+    }
+
+    private void validateTableNumer(Integer tableNumber){
+        if(billRepository.openBillExistsForTable(tableNumber)){
+            throw new InvalidBillActionException(
+                    "Table %d already has an open bill.".formatted(tableNumber)
+            );
+        }
     }
 
 

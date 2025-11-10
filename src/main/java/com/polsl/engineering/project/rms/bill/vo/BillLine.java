@@ -4,6 +4,7 @@ public record BillLine(
         String menuItemId,
         int quantity,
         Money unitPrice,
+        String menuItemName,
         long menuItemVersion
 ) {
     public BillLine {

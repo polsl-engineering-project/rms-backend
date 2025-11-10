@@ -1,5 +1,7 @@
 package com.polsl.engineering.project.rms.common.error_handler;
 
+import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
+import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -10,13 +12,34 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class ErrorHandler {
+
+    @ExceptionHandler(InvalidBillActionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidBillAction(InvalidBillActionException ex) {
+        var response = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid bill action",
+                ex.getMessage()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MenuItemVersionMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMenuItemVersionMismatchException(MenuItemVersionMismatchException ex) {
+        var response = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Item version mismatch",
+                ex.getMessage()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {

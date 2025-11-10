@@ -50,8 +50,9 @@ class BillDbMapper {
             var menuItemId = rs.getString("menu_item_id");
             var quantity = rs.getInt("quantity");
             var unitPrice = mapMoney(rs, "unit_price");
+            var menuItemName = rs.getString("menu_item_name");
             var menuItemVersion = rs.getLong("menu_item_version");
-            return new BillLine(menuItemId, quantity, unitPrice, menuItemVersion);
+            return new BillLine(menuItemId, quantity, unitPrice, menuItemName, menuItemVersion);
         } catch (SQLException e) {
             throw new DataRetrievalFailureException("Failed to map BillLine from ResultSet", e);
         }

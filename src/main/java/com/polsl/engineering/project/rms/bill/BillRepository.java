@@ -67,8 +67,9 @@ class BillRepository {
                 menu_item_id,
                 quantity,
                 unit_price,
+                menu_item_name,
                 menu_item_version
-            ) VALUES (?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String BILL_LINES_DELETE_SQL = """
@@ -76,7 +77,7 @@ class BillRepository {
             WHERE bill_id = ?
             """;
 
-    public Optional<Bill> findById(BillId billId) {
+    Optional<Bill> findById(BillId billId) {
         final var billSql = """
                 SELECT *
                 FROM bills
@@ -132,8 +133,25 @@ class BillRepository {
         }
     }
 
+    boolean openBillExistsForTable(Integer tableNumber) {
+        final var sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM bills
+                WHERE table_number = ?
+                  AND bill_status = 'OPEN'
+            )
+            """;
+
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, sql, tableNumber);
+
+        Boolean exists = jdbcTemplate.queryForObject(sql, Boolean.class, tableNumber);
+        return exists != null && exists;
+    }
+
+
     @Transactional
-    public void saveNewBill(Bill bill) {
+    void saveNewBill(Bill bill) {
         var params = paramsBuilder.buildInsertParams(bill);
         QueryLogging.logSql(log, QueryLogging.KIND_UPDATE, BILL_INSERT_SQL, params);
         jdbcTemplate.update(BILL_INSERT_SQL, params);
@@ -141,7 +159,7 @@ class BillRepository {
     }
 
     @Transactional
-    public void updateWithoutLines(Bill bill) {
+    void updateWithoutLines(Bill bill) {
         var params = paramsBuilder.buildUpdateParams(bill);
         QueryLogging.logSql(log, QueryLogging.KIND_UPDATE, BILL_UPDATE_SQL, params);
         var updated = jdbcTemplate.update(BILL_UPDATE_SQL, params);
@@ -151,7 +169,7 @@ class BillRepository {
     }
 
     @Transactional
-    public void updateWithLines(Bill bill) {
+    void updateWithLines(Bill bill) {
         var params = paramsBuilder.buildUpdateParams(bill);
         QueryLogging.logSql(log, QueryLogging.KIND_UPDATE, BILL_UPDATE_SQL, params);
         var updated = jdbcTemplate.update(BILL_UPDATE_SQL, params);
@@ -164,7 +182,7 @@ class BillRepository {
         insertLines(bill.getId().value(), bill.getLines());
     }
 
-    public BillPayloads.BillPageResponse searchBills(BillPayloads.BillSearchRequest criteria, int page, int size) {
+    BillPayloads.BillPageResponse searchBills(BillPayloads.BillSearchRequest criteria, int page, int size) {
         var queryBuilder = new BillQueryBuilder(criteria);
         var countSql = queryBuilder.buildCountQuery();
         var selectSql = queryBuilder.buildSelectQuery(page, size);
@@ -215,20 +233,20 @@ class BillRepository {
         return new BillPayloads.BillPageResponse(content, page, size, total, totalPages, isFirst, isLast, hasPrevious, hasNext);
     }
 
-    private void insertLines(UUID billId, List<BillLine> lines) {
+    void insertLines(UUID billId, List<BillLine> lines) {
         if (lines == null || lines.isEmpty()) return;
         var batchArgs = new ArrayList<Object[]>();
         for (var line : lines) {
             var lineId = UUID.randomUUID();
             var unitPrice = line.unitPrice().amount();
-            batchArgs.add(new Object[]{lineId, billId, line.menuItemId(), line.quantity(), unitPrice, line.menuItemVersion()});
+            batchArgs.add(new Object[]{lineId, billId, line.menuItemId(), line.quantity(), unitPrice, line.menuItemName(), line.menuItemVersion()});
         }
         var sample = batchArgs.size() > 3 ? batchArgs.subList(0, 3) : batchArgs;
         QueryLogging.logBatch(log, BILL_LINES_INSERT_SQL, batchArgs.size(), sample);
         jdbcTemplate.batchUpdate(BILL_LINES_INSERT_SQL, batchArgs);
     }
 
-    private List<BillLine> loadBillLines(UUID billId) {
+    List<BillLine> loadBillLines(UUID billId) {
         final var linesSql = """
                 SELECT *
                 FROM bill_lines
