@@ -1,11 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import lombok.Getter;
-
-import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;

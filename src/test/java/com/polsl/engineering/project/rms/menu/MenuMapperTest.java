@@ -186,7 +186,7 @@ class MenuMapperTest {
     }
 
     @Test
-    @DisplayName("Given null items list, When mapItems, Then returns null")
+    @DisplayName("Given null items list, When mapItems, Then returns empty")
     void givenNullItemsList_WhenMapItems_ThenReturnsNull() {
         // Given
         List<MenuItem> items = null;
@@ -195,7 +195,7 @@ class MenuMapperTest {
         var result = underTest.mapItems(items);
 
         // Then
-        assertThat(result).isNull();
+        assertThat(result).isEmpty();
     }
 
     @Test

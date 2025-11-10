@@ -23,6 +23,8 @@ class BillController {
     @Operation(summary = "Search and filter bills with pagination")
     @ApiResponse(responseCode = "200", description = "Bills retrieved successfully",
             content = @Content(schema = @Schema(implementation = BillPayloads.BillPageResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid input data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping
     ResponseEntity<BillPayloads.BillPageResponse> searchBills(@RequestBody BillPayloads.BillSearchRequest request) {
         var response = billService.searchBills(request);
@@ -32,6 +34,8 @@ class BillController {
     @Operation(summary = "Search bill by id")
     @ApiResponse(responseCode = "200", description = "Bill retrieved successfully",
             content = @Content(schema = @Schema(implementation = BillPayloads.BillSummaryResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Bill not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("{id}")
     ResponseEntity<BillPayloads.BillSummaryWithLinesResponse> searchBill(@PathVariable("id") String id) {
         var response = billService.searchBill(id);
@@ -83,6 +87,8 @@ class BillController {
 
     @Operation(summary = "Close a bill")
     @ApiResponse(responseCode = "204", description = "Bill closed successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "404", description = "Bill not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/{id}/close")
@@ -93,6 +99,8 @@ class BillController {
 
     @Operation(summary = "Pay a bill")
     @ApiResponse(responseCode = "204", description = "Bill payed successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "404", description = "Bill not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/{id}/pay")

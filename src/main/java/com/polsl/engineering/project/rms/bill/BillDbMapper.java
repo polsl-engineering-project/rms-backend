@@ -38,7 +38,7 @@ class BillDbMapper {
 
     Money mapMoney(ResultSet rs, String column) {
         try {
-            BigDecimal amount = rs.getBigDecimal(column);
+            var amount = rs.getBigDecimal(column);
             return new Money(amount);
         } catch (SQLException e) {
             throw new DataRetrievalFailureException("Failed to map money column '" + column + "' from ResultSet", e);

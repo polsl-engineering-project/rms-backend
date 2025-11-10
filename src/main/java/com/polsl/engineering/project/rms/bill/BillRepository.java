@@ -145,7 +145,7 @@ class BillRepository {
 
         QueryLogging.logSql(log, QueryLogging.KIND_QUERY, sql, tableNumber);
 
-        Boolean exists = jdbcTemplate.queryForObject(sql, Boolean.class, tableNumber);
+        var exists = jdbcTemplate.queryForObject(sql, Boolean.class, tableNumber);
         return exists != null && exists;
     }
 

@@ -162,7 +162,7 @@ class Bill {
         lines.addAll(removeResult.getValue());
 
         if (lines.isEmpty()) {
-            return Result.failure("Cannot remove all items from bill. Close the bill instead");
+            return Result.failure("Cannot remove all items from bill.");
         }
 
         totalAmount = calculateTotal(lines);
