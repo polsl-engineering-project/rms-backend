@@ -143,6 +143,13 @@ class OrderService {
         saveEvents(order);
     }
 
+    List<OrderPayloads.OrderDetailsResponse> getActiveOrders() {
+        return jdbcRepository.findActiveOrders()
+                .stream()
+                .map(mapper::toDetailsResponse)
+                .toList();
+    }
+
     private Order findByIdOrThrow(String id) {
         return jdbcRepository.findById(OrderId.from(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id %s not found".formatted(id)));

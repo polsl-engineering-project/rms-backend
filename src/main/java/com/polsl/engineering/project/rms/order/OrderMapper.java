@@ -29,4 +29,27 @@ interface OrderMapper {
         return value == null ? null : value.value();
     }
 
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "status", expression = "java(order.getStatus() == null ? null : order.getStatus().name())")
+    @Mapping(target = "customerInfo", source = "customerInfo")
+    @Mapping(target = "address", source = "deliveryAddress")
+    @Mapping(target = "deliveryMode", source = "deliveryMode")
+    @Mapping(target = "scheduledFor", source = "scheduledFor")
+    @Mapping(target = "orderLines", expression = "java(mapLines(order.getLines()))")
+    @Mapping(target = "estimatedPreparationTimeMinutes", source = "estimatedPreparationMinutes")
+    OrderPayloads.OrderDetailsResponse toDetailsResponse(Order order);
+
+    @Mapping(target = "menuItemId", expression = "java(java.util.UUID.fromString(line.menuItemId()))")
+    @Mapping(target = "quantity", source = "quantity")
+    @Mapping(target = "version", source = "menuItemVersion")
+    OrderPayloads.OrderLine toPayloadOrderLine(OrderLine line);
+
+    @SuppressWarnings("unused")
+    default List<OrderPayloads.OrderLine> mapLines(List<OrderLine> lines) {
+        if (lines == null) return null;
+        return lines.stream()
+                .map(this::toPayloadOrderLine)
+                .toList();
+    }
+
 }

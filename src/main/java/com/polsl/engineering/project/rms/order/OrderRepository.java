@@ -13,6 +13,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import com.polsl.engineering.project.rms.common.db.QueryLogging;
 
@@ -96,47 +98,7 @@ class OrderRepository {
 
         try {
             QueryLogging.logSql(log, QueryLogging.KIND_QUERY, orderSql, orderId.value());
-            Order order = jdbcTemplate.queryForObject(orderSql, (rs, _) -> {
-                var id = rs.getObject("id", java.util.UUID.class);
-                var idVo = new OrderId(id);
-
-                var type = OrderType.valueOf(rs.getString("order_type"));
-                var deliveryMode = DeliveryMode.valueOf(rs.getString("delivery_mode"));
-                var status = OrderStatus.valueOf(rs.getString("order_status"));
-
-                var customerInfo = dbMapper.mapCustomerInfo(rs);
-
-                var deliveryAddress = dbMapper.mapDeliveryAddress(rs);
-
-                var scheduledFor = dbMapper.mapScheduledFor(rs);
-
-                var estimatedPreparationMinutes = dbMapper.mapNullableInteger(rs, "estimated_preparation_minutes");
-
-                var cancellationReason = rs.getString("cancellation_reason");
-
-                var placedAt = dbMapper.mapInstant(rs, "placed_at");
-                var updatedAt = dbMapper.mapInstant(rs, "updated_at");
-
-                var version = rs.getLong("version");
-
-                var lines = loadOrderLines(id);
-
-                return Order.reconstruct(
-                        idVo,
-                        type,
-                        deliveryMode,
-                        status,
-                        lines,
-                        deliveryAddress,
-                        customerInfo,
-                        scheduledFor,
-                        estimatedPreparationMinutes,
-                        cancellationReason,
-                        placedAt,
-                        updatedAt,
-                        version
-                );
-            }, orderId.value());
+            Order order = jdbcTemplate.queryForObject(orderSql, this::mapOrder, orderId.value());
 
             return Optional.ofNullable(order);
         } catch (EmptyResultDataAccessException _) {
@@ -202,6 +164,63 @@ class OrderRepository {
                 """;
         QueryLogging.logSql(log, QueryLogging.KIND_QUERY, linesSql, orderId);
         return jdbcTemplate.query(linesSql, (r2, _) -> dbMapper.mapOrderLine(r2), orderId);
+    }
+
+    public List<Order> findActiveOrders() {
+        final var sql = """
+                SELECT *
+                FROM orders
+                WHERE order_status NOT IN (?, ?)
+                ORDER BY placed_at
+                """;
+
+        var completed = OrderStatus.COMPLETED.name();
+        var canceled = OrderStatus.CANCELLED.name();
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, sql, completed, canceled);
+
+        return jdbcTemplate.query(sql, this::mapOrder, completed, canceled);
+    }
+
+    private Order mapOrder(ResultSet rs, int rowNum) throws SQLException {
+        var id = rs.getObject("id", java.util.UUID.class);
+        var idVo = new OrderId(id);
+
+        var type = OrderType.valueOf(rs.getString("order_type"));
+        var deliveryMode = DeliveryMode.valueOf(rs.getString("delivery_mode"));
+        var status = OrderStatus.valueOf(rs.getString("order_status"));
+
+        var customerInfo = dbMapper.mapCustomerInfo(rs);
+
+        var deliveryAddress = dbMapper.mapDeliveryAddress(rs);
+
+        var scheduledFor = dbMapper.mapScheduledFor(rs);
+
+        var estimatedPreparationMinutes = dbMapper.mapNullableInteger(rs, "estimated_preparation_minutes");
+
+        var cancellationReason = rs.getString("cancellation_reason");
+
+        var placedAt = dbMapper.mapInstant(rs, "placed_at");
+        var updatedAt = dbMapper.mapInstant(rs, "updated_at");
+
+        var version = rs.getLong("version");
+
+        var lines = loadOrderLines(id);
+
+        return Order.reconstruct(
+                idVo,
+                type,
+                deliveryMode,
+                status,
+                lines,
+                deliveryAddress,
+                customerInfo,
+                scheduledFor,
+                estimatedPreparationMinutes,
+                cancellationReason,
+                placedAt,
+                updatedAt,
+                version
+        );
     }
 
 }

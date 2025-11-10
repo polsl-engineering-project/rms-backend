@@ -372,6 +372,10 @@ class Order {
         return Result.ok(null);
     }
 
+    boolean isFinished() {
+        return status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED;
+    }
+
     // ==== Getters for Collections ====
     List<OrderLine> getLines() {
         return List.copyOf(lines);
