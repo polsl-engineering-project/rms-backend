@@ -131,4 +131,14 @@ class OrderController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Get limited view of your order (customer)")
+    @ApiResponse(responseCode = "200", description = "Order view retrieved successfully",
+            content = @Content(schema = @Schema(implementation = OrderPayloads.OrderCustomerViewResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Order not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping("/{id}/customer-view")
+    ResponseEntity<OrderPayloads.OrderCustomerViewResponse> getOrderForCustomer(@PathVariable String id) {
+        return ResponseEntity.ok(orderService.getOrderForCustomer(id));
+    }
+
 }

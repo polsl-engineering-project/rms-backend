@@ -89,6 +89,14 @@ public class OrderPayloads {
     ) {
     }
 
+    public record OrderCustomerViewResponse(
+            UUID id,
+            String status,
+            Integer estimatedPreparationMinutes,
+            String cancellationReason
+    ) {
+    }
+
     public record OrderWebsocketMessage(
             String type,
             Object data
