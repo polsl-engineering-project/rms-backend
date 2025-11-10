@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OrderStaffWebsocketHandlerTest {
+class OrderWebsocketHandlerTest {
 
     @Mock
     OrderService orderService;
@@ -26,11 +26,11 @@ class OrderStaffWebsocketHandlerTest {
     @Mock
     OrderWebsocketSessionRegistry sessionRegistry;
 
-    OrderStaffWebsocketHandler handler;
+    OrderWebsocketHandler handler;
 
     @BeforeEach
     void setUp() {
-        handler = new OrderStaffWebsocketHandler(orderService, new ObjectMapper(), sessionRegistry);
+        handler = new OrderWebsocketHandler(orderService, new ObjectMapper(), sessionRegistry);
     }
 
     @Test
@@ -40,7 +40,7 @@ class OrderStaffWebsocketHandlerTest {
         WebSocketSession session = mock(WebSocketSession.class);
         when(orderService.getActiveOrders()).thenReturn(List.of());
         var realOm = new ObjectMapper();
-        handler = new OrderStaffWebsocketHandler(orderService, realOm, sessionRegistry);
+        handler = new OrderWebsocketHandler(orderService, realOm, sessionRegistry);
 
         //when
         handler.afterConnectionEstablished(session);
@@ -49,7 +49,7 @@ class OrderStaffWebsocketHandlerTest {
         ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
         verify(session).sendMessage(captor.capture());
         assertThat(captor.getValue().getPayload()).contains("INITIAL_DATA");
-        verify(sessionRegistry).registerStaffSession(session);
+        verify(sessionRegistry).registerSession(session);
     }
 
     @Test
@@ -59,7 +59,7 @@ class OrderStaffWebsocketHandlerTest {
         WebSocketSession session = mock(WebSocketSession.class);
         when(orderService.getActiveOrders()).thenThrow(new RuntimeException("boom"));
         var realOm = new ObjectMapper();
-        handler = new OrderStaffWebsocketHandler(orderService, realOm, sessionRegistry);
+        handler = new OrderWebsocketHandler(orderService, realOm, sessionRegistry);
 
         //when
         handler.afterConnectionEstablished(session);
@@ -67,7 +67,7 @@ class OrderStaffWebsocketHandlerTest {
         //then
         verify(session, never()).sendMessage(any());
         verify(session).close();
-        verify(sessionRegistry).registerStaffSession(session);
+        verify(sessionRegistry).registerSession(session);
     }
 
     @Test
@@ -75,13 +75,13 @@ class OrderStaffWebsocketHandlerTest {
     void GivenSession_WhenAfterConnectionClosed_ThenUnregisterStaffSession() {
         //given
         WebSocketSession session = mock(WebSocketSession.class);
-        handler = new OrderStaffWebsocketHandler(orderService, new ObjectMapper(), sessionRegistry);
+        handler = new OrderWebsocketHandler(orderService, new ObjectMapper(), sessionRegistry);
 
         //when
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
 
         //then
-        verify(sessionRegistry).unregisterStaffSession(session);
+        verify(sessionRegistry).unregisterSession(session);
     }
 
 }

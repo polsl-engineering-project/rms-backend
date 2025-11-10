@@ -14,7 +14,7 @@ import java.io.IOException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-class OrderStaffWebsocketHandler extends TextWebSocketHandler {
+class OrderWebsocketHandler extends TextWebSocketHandler {
 
     private final OrderService orderService;
     private final ObjectMapper om;
@@ -23,12 +23,12 @@ class OrderStaffWebsocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
         sendInitialData(session);
-        sessionRegistry.registerStaffSession(session);
+        sessionRegistry.registerSession(session);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        sessionRegistry.unregisterStaffSession(session);
+        sessionRegistry.unregisterSession(session);
     }
 
     private void sendInitialData(WebSocketSession session) throws IOException {

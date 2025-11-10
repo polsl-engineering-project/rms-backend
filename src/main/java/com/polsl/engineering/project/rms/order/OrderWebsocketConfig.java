@@ -11,15 +11,11 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @RequiredArgsConstructor
 class OrderWebsocketConfig implements WebsocketConfig.ModuleWebsocketConfig {
 
-    private final OrderStaffWebsocketHandler staffWebsocketHandler;
-    private final OrderCustomerWebsocketHandler customerWebsocketHandler;
+    private final OrderWebsocketHandler staffWebsocketHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(staffWebsocketHandler, "/ws/orders/staff")
-                .setAllowedOrigins("*");
-        registry.addHandler(customerWebsocketHandler, "/ws/order-status")
-                .addInterceptors(new OrderCustomerWebsocketInterceptor())
+        registry.addHandler(staffWebsocketHandler, "/ws/orders")
                 .setAllowedOrigins("*");
     }
 
