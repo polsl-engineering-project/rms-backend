@@ -179,7 +179,7 @@ class MenuControllerTest {
     void createItem_valid_returns200() throws Exception {
         var req = validCreateItemRequest();
         var resp = new MenuItemResponse(UUID.randomUUID(), req.name(), req.description(), req.price(),
-                req.calories(), req.allergens(), req.vegetarian(), req.vegan(), req.glutenFree(), req.spiceLevel(), req.categoryId());
+                req.calories(), req.allergens(), req.vegetarian(), req.vegan(), req.glutenFree(), req.spiceLevel(), req.categoryId(), 0);
 
         when(menuItemService.createItem(req)).thenReturn(resp);
 
@@ -197,7 +197,7 @@ class MenuControllerTest {
     @DisplayName("GET /api/v1/menu/item?page&size - paged -> 200")
     void getAllItems_paged_returns200() throws Exception {
         var resp = new MenuItemResponse(UUID.randomUUID(), "Soup", "Hot", BigDecimal.TEN, 100, null, true, false, false,
-                MenuItem.SpiceLevel.NONE, UUID.randomUUID());
+                MenuItem.SpiceLevel.NONE, UUID.randomUUID(), 0);
         when(menuItemService.findAllPaged(0, 10, null)).thenReturn(new PageImpl<>(List.of(resp)));
 
         mockMvc.perform(get("/api/v1/menu/item?page=0&size=10"))
@@ -236,7 +236,7 @@ class MenuControllerTest {
     void getItemById_returns200() throws Exception {
         var id = UUID.randomUUID().toString();
         var resp = new MenuItemResponse(UUID.fromString(id), "Cake", "Chocolate", BigDecimal.TEN, 400,
-                "nuts", true, false, false, MenuItem.SpiceLevel.NONE, UUID.randomUUID());
+                "nuts", true, false, false, MenuItem.SpiceLevel.NONE, UUID.randomUUID(), 0);
 
         when(menuItemService.findById(id)).thenReturn(resp);
 

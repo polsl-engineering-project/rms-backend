@@ -53,7 +53,7 @@ class OrderServiceTest {
         var customer = new CustomerInfo("John", "Doe", "123");
         var request = new OrderPayloads.PlacePickUpOrderRequest(customer, DeliveryMode.ASAP, null, List.of(payloadLine));
 
-        var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("12.50"), 1L);
+        var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("12.50"), "Dish", 1L);
         when(menuApi.getSnapshotsForOrderByIds(anyList())).thenReturn(Map.of(payloadLineId, snapshot));
 
         // mapper.toCommand should return a valid command based on provided domain lines
@@ -108,7 +108,7 @@ class OrderServiceTest {
         var request = new OrderPayloads.PlaceDeliveryOrderRequest(customer, address, DeliveryMode.ASAP, null, List.of(payloadLine));
 
         // menu snapshot has different version
-        var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("5.00"), 1L);
+        var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("5.00"), "Dish", 1L);
         when(menuApi.getSnapshotsForOrderByIds(anyList())).thenReturn(Map.of(payloadLineId, snapshot));
 
         //when / then

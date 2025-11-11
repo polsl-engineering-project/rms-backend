@@ -294,5 +294,6 @@ record MenuItemResponse(
         Boolean vegan,
         Boolean glutenFree,
         MenuItem.SpiceLevel spiceLevel,
-        UUID categoryId
+        UUID categoryId,
+        Integer version
 ){}
