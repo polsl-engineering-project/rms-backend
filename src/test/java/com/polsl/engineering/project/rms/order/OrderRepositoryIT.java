@@ -305,4 +305,27 @@ class OrderRepositoryIT extends ContainersEnvironment {
         assertThatThrownBy(() -> underTest.updateWithLines(updatedB))
                 .isInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class);
     }
+
+    @Test
+    @DisplayName("Given various orders_When findActiveOrders_Then returns only active orders with lines")
+    void GivenVariousOrders_WhenFindActiveOrders_ThenReturnsOnlyActiveOrdersWithLines() {
+        // when
+        var activeOrders = underTest.findActiveOrders();
+
+        // then - none should be COMPLETED or CANCELLED
+        assertThat(activeOrders)
+                .isNotEmpty()
+                .allMatch(o -> o.getStatus() != OrderStatus.COMPLETED && o.getStatus() != OrderStatus.CANCELLED);
+
+        // expected active ids from test data: 0001, 0002, 0006
+        assertThat(activeOrders).extracting(Order::getId)
+                .containsExactlyInAnyOrder(
+                        OrderId.from("00000000-0000-0000-0000-000000000001"),
+                        OrderId.from("00000000-0000-0000-0000-000000000002"),
+                        OrderId.from("00000000-0000-0000-0000-000000000006")
+                );
+
+        // each returned order should have its lines loaded
+        activeOrders.forEach(o -> assertThat(o.getLines()).isNotEmpty());
+    }
 }

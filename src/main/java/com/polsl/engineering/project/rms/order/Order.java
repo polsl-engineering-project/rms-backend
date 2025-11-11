@@ -2,6 +2,8 @@ package com.polsl.engineering.project.rms.order;
 
 import com.polsl.engineering.project.rms.common.result.Result;
 import com.polsl.engineering.project.rms.order.cmd.*;
+import com.polsl.engineering.project.rms.order.event.OrderEvent;
+import com.polsl.engineering.project.rms.order.event.*;
 import com.polsl.engineering.project.rms.order.vo.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -13,7 +15,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
@@ -45,6 +46,9 @@ class Order {
     private Instant updatedAt;
 
     private long version;
+
+    @Getter(AccessLevel.NONE)
+    private final List<OrderEvent> events = new ArrayList<>();
 
     // ==== Constructors ====
     private Order(
@@ -124,6 +128,16 @@ class Order {
                 clock
         );
 
+        // Emit event
+        order.events.add(new PickUpOrderPlacedEvent(
+                order.id,
+                order.placedAt,
+                List.copyOf(order.lines),
+                order.deliveryAddress,
+                order.customerInfo,
+                order.scheduledFor
+        ));
+
         return Result.ok(order);
     }
 
@@ -147,6 +161,16 @@ class Order {
                 cmd.scheduledFor(),
                 clock
         );
+
+        // Emit event
+        order.events.add(new DeliveryOrderPlacedEvent(
+                order.id,
+                order.placedAt,
+                List.copyOf(order.lines),
+                order.deliveryAddress,
+                order.customerInfo,
+                order.scheduledFor
+        ));
 
         return Result.ok(order);
     }
@@ -188,6 +212,9 @@ class Order {
         status = OrderStatus.APPROVED_BY_FRONT_DESK;
         updatedAt = Instant.now(clock);
 
+        // emit event
+        events.add(new OrderApprovedByFrontDeskEvent(id, updatedAt));
+
         return Result.ok(null);
     }
 
@@ -204,6 +231,9 @@ class Order {
 
         updatedAt = Instant.now(clock);
 
+        // emit event
+        events.add(new OrderApprovedByKitchenEvent(id, updatedAt, estimatedPreparationMinutes));
+
         return Result.ok(null);
     }
 
@@ -219,6 +249,9 @@ class Order {
         }
 
         updatedAt = Instant.now(clock);
+
+        // emit event
+        events.add(new OrderMarkedAsReadyEvent(id, updatedAt, status));
 
         return Result.ok(null);
     }
@@ -267,6 +300,9 @@ class Order {
 
         updatedAt = Instant.now(clock);
 
+        // emit event with snapshot of changes
+        events.add(new OrderLinesChangedEvent(id, updatedAt, List.copyOf(newLines), List.copyOf(removeLines), estimatedPreparationMinutes));
+
         return Result.ok(null);
     }
 
@@ -297,6 +333,9 @@ class Order {
         status = OrderStatus.IN_DELIVERY;
         updatedAt = Instant.now(clock);
 
+        // emit event
+        events.add(new OrderDeliveryStartedEvent(id, updatedAt));
+
         return Result.ok(null);
     }
 
@@ -311,6 +350,9 @@ class Order {
         status = OrderStatus.COMPLETED;
         updatedAt = Instant.now(clock);
 
+        // emit event
+        events.add(new OrderCompletedEvent(id, updatedAt));
+
         return Result.ok(null);
     }
 
@@ -324,12 +366,25 @@ class Order {
 
         updatedAt = Instant.now(clock);
 
+        // emit event
+        events.add(new OrderCancelledEvent(id, updatedAt, cancellationReason));
+
         return Result.ok(null);
+    }
+
+    boolean isFinished() {
+        return status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED;
     }
 
     // ==== Getters for Collections ====
     List<OrderLine> getLines() {
         return List.copyOf(lines);
+    }
+
+    List<OrderEvent> pullEvents() {
+        var emittedEvents = List.copyOf(events);
+        events.clear();
+        return emittedEvents;
     }
 
     // ==== Identity ====

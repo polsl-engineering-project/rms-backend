@@ -1,5 +1,7 @@
 package com.polsl.engineering.project.rms.order.vo;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.Embeddable;
 
 import java.math.BigDecimal;
@@ -7,8 +9,9 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 @Embeddable
-public record Money(BigDecimal amount) {
+public record Money(@JsonValue BigDecimal amount) {
 
+    @JsonCreator
     public Money {
         Objects.requireNonNull(amount, "Amount cannot be null");
         if (amount.compareTo(BigDecimal.ZERO) < 0) {

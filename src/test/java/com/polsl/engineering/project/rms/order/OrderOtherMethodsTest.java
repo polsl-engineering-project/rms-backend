@@ -140,4 +140,50 @@ class OrderOtherMethodsTest {
         assertThat(cancelResult.isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
+
+    @Test
+    @DisplayName("GivenNewOrder_WhenNotFinished_ThenIsFinishedFalse")
+    void GivenNewOrder_WhenNotFinished_ThenIsFinishedFalse() {
+        //given
+        var order = placePickup(List.of(line("burger", 1, "12.00", 1)));
+
+        //when
+        var finished = order.isFinished();
+
+        //then
+        assertThat(finished).isFalse();
+    }
+
+    @Test
+    @DisplayName("GivenCompletedOrder_WhenComplete_ThenIsFinishedTrue")
+    void GivenCompletedOrder_WhenComplete_ThenIsFinishedTrue() {
+        //given
+        var order = placePickup(List.of(line("cake", 1, "15.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
+
+        //when
+        var completeResult = order.complete(FIXED_CLOCK);
+
+        //then
+        assertThat(completeResult.isSuccess()).isTrue();
+        assertThat(order.isFinished()).isTrue();
+    }
+
+    @Test
+    @DisplayName("GivenConfirmedOrder_WhenCancel_ThenIsFinishedTrue")
+    void GivenConfirmedOrder_WhenCancel_ThenIsFinishedTrue() {
+        //given
+        var order = placePickup(List.of(line("soda", 1, "5.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+
+        //when
+        var cancelResult = order.cancel(new com.polsl.engineering.project.rms.order.cmd.CancelOrderCommand("client request"), FIXED_CLOCK);
+
+        //then
+        assertThat(cancelResult.isSuccess()).isTrue();
+        assertThat(order.isFinished()).isTrue();
+    }
 }

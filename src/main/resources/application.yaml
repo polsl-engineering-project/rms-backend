@@ -18,6 +18,11 @@ spring:
 jwt.key: ${JWT_KEY:jP@FxBg)+q#grgA$$ESnfBNnmZrgY%P#Z2I)DMRvGa!W%xpcnFuIDj^MW)LX!!Hg}
 jwt.expirationMillis: ${JWT_LIFETIME:3600000}
 
+order-outbox-event-poller:
+  fixed-delay-ms: 300
+order-outbox-event-cleaner:
+  fixed-delay-ms: 3600000
+
 refresh-tokens:
   length: 64
   max-per-user: 5

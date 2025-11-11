@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class OrderPayloads {
@@ -74,6 +75,35 @@ public class OrderPayloads {
     public record OrderPlacedResponse(
             UUID id
     ) {
+    }
+
+    public record OrderDetailsResponse(
+            UUID id,
+            String status,
+            CustomerInfo customerInfo,
+            Address address,
+            DeliveryMode deliveryMode,
+            LocalTime scheduledFor,
+            List<OrderLine> orderLines,
+            Integer estimatedPreparationTimeMinutes
+    ) {
+    }
+
+    public record OrderCustomerViewResponse(
+            UUID id,
+            String status,
+            Integer estimatedPreparationMinutes,
+            String cancellationReason
+    ) {
+    }
+
+    public record OrderWebsocketMessage(
+            String type,
+            Object data
+    ) {
+        static OrderWebsocketMessage error(String errorMessage) {
+            return new OrderWebsocketMessage("ERROR", Map.of("message", errorMessage));
+        }
     }
 
 }
