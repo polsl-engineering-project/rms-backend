@@ -23,7 +23,7 @@ class BillRemoveItemsTest {
     private static Bill createOpenBill(List<BillLine> initialLines) {
         var cmd = new OpenBillCommand(
                 TableNumber.of(5),
-                new WaiterInfo("John", "Doe", UUID.randomUUID().toString()),
+                UUID.randomUUID().toString(),
                 initialLines
         );
         var result = Bill.open(cmd, FIXED_CLOCK);
@@ -178,34 +178,6 @@ class BillRemoveItemsTest {
 
         var cmd = new RemoveItemsFromBillCommand(List.of(
                 lineRemoval(cakeId, 1)
-        ));
-
-        // when
-        var result = bill.removeItems(cmd, FIXED_CLOCK);
-
-        // then
-        assertThat(result.isFailure()).isTrue();
-        assertThat(result.getError()).isEqualTo("Can only remove items from an open bill");
-    }
-
-    @Test
-    @DisplayName("Given paid bill, When removing items, Then failure")
-    void GivenPaidBill_WhenRemoveItems_ThenFailure() {
-        // given
-        var teaId = UUID.randomUUID().toString();
-        var bill = createOpenBill(List.of(
-                line(teaId, 1, "5.00", "Tea", 1)
-        ));
-        assertThat(bill.close(FIXED_CLOCK).isSuccess()).isTrue();
-        var payCmd = new com.polsl.engineering.project.rms.bill.cmd.PayBillCommand(
-                com.polsl.engineering.project.rms.order.vo.PaymentMethod.CARD,
-                Money.of("10.00")
-        );
-        assertThat(bill.pay(payCmd, FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(bill.getStatus()).isEqualTo(BillStatus.PAID);
-
-        var cmd = new RemoveItemsFromBillCommand(List.of(
-                lineRemoval(teaId, 1)
         ));
 
         // when

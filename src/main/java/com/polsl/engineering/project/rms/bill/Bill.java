@@ -3,7 +3,6 @@ package com.polsl.engineering.project.rms.bill;
 import com.polsl.engineering.project.rms.common.result.Result;
 import com.polsl.engineering.project.rms.bill.cmd.*;
 import com.polsl.engineering.project.rms.bill.vo.*;
-import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,22 +23,16 @@ class Bill {
 
     private BillStatus status;
 
-    private PaymentMethod paymentMethod;
-
     @Getter(AccessLevel.NONE)
     private final List<BillLine> lines = new ArrayList<>();
 
-    private WaiterInfo waiterInfo;
+    private String userId;
 
     private Money totalAmount;
-
-    private Money paidAmount;
 
     private Instant openedAt;
 
     private Instant closedAt;
-
-    private Instant paidAt;
 
     private Instant updatedAt;
 
@@ -48,16 +41,15 @@ class Bill {
     private Bill(
             TableNumber tableNumber,
             List<BillLine> initialLines,
-            WaiterInfo waiterInfo,
+            String userId,
             Clock clock
     ) {
         this.id = BillId.generate();
         this.tableNumber = tableNumber;
         this.status = BillStatus.OPEN;
         this.lines.addAll(initialLines);
-        this.waiterInfo = waiterInfo;
+        this.userId = userId;
         this.totalAmount = calculateTotal(initialLines);
-        this.paidAmount = Money.ZERO;
         this.openedAt = Instant.now(clock);
         this.updatedAt = Instant.now(clock);
         this.version = 0;
@@ -67,14 +59,11 @@ class Bill {
             BillId id,
             TableNumber tableNumber,
             BillStatus status,
-            PaymentMethod paymentMethod,
             List<BillLine> lines,
-            WaiterInfo waiterInfo,
+            String userId,
             Money totalAmount,
-            Money paidAmount,
             Instant openedAt,
             Instant closedAt,
-            Instant paidAt,
             Instant updatedAt,
             long version
     ) {
@@ -82,13 +71,10 @@ class Bill {
                 id,
                 tableNumber,
                 status,
-                paymentMethod,
-                waiterInfo,
+                userId,
                 totalAmount,
-                paidAmount,
                 openedAt,
                 closedAt,
-                paidAt,
                 updatedAt,
                 version
         );
@@ -105,7 +91,7 @@ class Bill {
         var bill = new Bill(
                 cmd.tableNumber(),
                 cmd.initialLines(),
-                cmd.waiterInfo(),
+                cmd.userId(),
                 clock
         );
 
@@ -117,8 +103,8 @@ class Bill {
         if (cmd.tableNumber() == null) {
             return Result.failure("Table number must be provided");
         }
-        if (cmd.waiterInfo() == null) {
-            return Result.failure("Waiter information must be provided");
+        if (cmd.userId() == null) {
+            return Result.failure("UserId information must be provided");
         }
         if (cmd.initialLines() == null || cmd.initialLines().isEmpty()) {
             return Result.failure("Initial bill lines must be provided");
@@ -185,30 +171,6 @@ class Bill {
 
         return Result.ok(null);
     }
-
-    Result<Void> pay(PayBillCommand cmd, Clock clock) {
-        if (status != BillStatus.CLOSED) {
-            return Result.failure("Only closed bills can be paid");
-        }
-        if (lines.isEmpty()) {
-            return Result.failure("Cannot pay bill with no items");
-        }
-        if(cmd.paidAmount().isLessThan(totalAmount)){
-            return Result.failure("Payment amount must be equal or greater than total amount");
-        }
-        if(cmd.paymentMethod() == null) {
-            return Result.failure("Payment method must be provided");
-        }
-
-        paymentMethod = cmd.paymentMethod();
-        paidAmount = cmd.paidAmount();
-        status = BillStatus.PAID;
-        paidAt = Instant.now(clock);
-        updatedAt = Instant.now(clock);
-
-        return Result.ok(null);
-    }
-
 
     private static Money calculateTotal(List<BillLine> lines) {
         var total = lines.stream()

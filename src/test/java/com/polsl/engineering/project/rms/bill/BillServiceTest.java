@@ -8,7 +8,6 @@ import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
-import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +52,7 @@ class BillServiceTest {
         // given
         var payloadLineId = UUID.randomUUID();
         var payloadLine = new BillPayloads.BillLine(payloadLineId, 2, 1L);
-        var waiterInfo = new WaiterInfo("John", "Doe", UUID.randomUUID().toString());
+        var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(5, waiterInfo, List.of(payloadLine));
 
         var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("30.00"), "Pizza", 1L);
@@ -62,7 +61,7 @@ class BillServiceTest {
         when(mapper.toCommand(any(BillPayloads.OpenBillRequest.class), anyList()))
                 .thenAnswer(invocation -> new OpenBillCommand(
                         TableNumber.of(invocation.getArgument(0, BillPayloads.OpenBillRequest.class).tableNumber()),
-                        invocation.getArgument(0, BillPayloads.OpenBillRequest.class).waiterInfo(),
+                        invocation.getArgument(0, BillPayloads.OpenBillRequest.class).userId(),
                         invocation.getArgument(1, List.class)
                 ));
 
@@ -88,7 +87,7 @@ class BillServiceTest {
         // given
         var payloadLineId = UUID.randomUUID();
         var payloadLine = new BillPayloads.BillLine(payloadLineId, 1, 0L);
-        var waiterInfo = new WaiterInfo("Jane", "Smith", UUID.randomUUID().toString());
+        var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(7, waiterInfo, List.of(payloadLine));
 
         when(billRepository.openBillExistsForTable(7)).thenReturn(true);
@@ -107,7 +106,7 @@ class BillServiceTest {
         // given
         var payloadLineId = UUID.randomUUID();
         var payloadLine = new BillPayloads.BillLine(payloadLineId, 1, 0L);
-        var waiterInfo = new WaiterInfo("Alice", "Johnson", UUID.randomUUID().toString());
+        var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(10, waiterInfo, List.of(payloadLine));
 
         when(billRepository.openBillExistsForTable(10)).thenReturn(false);
@@ -127,7 +126,7 @@ class BillServiceTest {
         // given
         var payloadLineId = UUID.randomUUID();
         var payloadLine = new BillPayloads.BillLine(payloadLineId, 1, 5L); // request says version 5
-        var waiterInfo = new WaiterInfo("Bob", "Brown", UUID.randomUUID().toString());
+        var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(12, waiterInfo, List.of(payloadLine));
 
         when(billRepository.openBillExistsForTable(12)).thenReturn(false);
@@ -297,60 +296,6 @@ class BillServiceTest {
         verify(billRepository, never()).updateWithoutLines(billMock);
     }
 
-    @Test
-    @DisplayName("Given existing bill, When payBill, Then updates repository without lines")
-    void GivenExistingBill_WhenPayBill_ThenUpdatesRepositoryWithoutLines() {
-        // given
-        var billId = UUID.randomUUID().toString();
-        var billMock = mock(Bill.class);
-        when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.pay(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
-
-        var request = new BillPayloads.PayBillRequest(PaymentMethod.CARD, 50.00);
-
-        // when
-        underTest.payBill(billId, request);
-
-        // then
-        verify(billRepository).updateWithoutLines(billMock);
-        verify(billMock).pay(any(), any(Clock.class));
-    }
-
-    @Test
-    @DisplayName("Given bill not found, When payBill, Then throws ResourceNotFoundException")
-    void GivenBillNotFound_WhenPayBill_ThenThrowsResourceNotFoundException() {
-        // given
-        var billId = UUID.randomUUID().toString();
-        when(billRepository.findById(any())).thenReturn(Optional.empty());
-
-        var request = new BillPayloads.PayBillRequest(PaymentMethod.CASH, 100.00);
-
-        // when / then
-        assertThatThrownBy(() -> underTest.payBill(billId, request))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining(billId);
-
-        verify(billRepository, never()).updateWithoutLines(any());
-    }
-
-    @Test
-    @DisplayName("Given failing aggregate, When payBill, Then throws InvalidBillActionException")
-    void GivenFailingAggregate_WhenPayBill_ThenThrowsInvalidBillActionException() {
-        // given
-        var billId = UUID.randomUUID().toString();
-        var billMock = mock(Bill.class);
-        when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.pay(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.failure("cannot pay"));
-
-        var request = new BillPayloads.PayBillRequest(PaymentMethod.CARD, 75.00);
-
-        // when / then
-        assertThatThrownBy(() -> underTest.payBill(billId, request))
-                .isInstanceOf(InvalidBillActionException.class)
-                .hasMessageContaining("cannot pay");
-
-        verify(billRepository, never()).updateWithoutLines(billMock);
-    }
 
     @Test
     @DisplayName("Given valid search request, When searchBills, Then returns page response")
@@ -363,9 +308,8 @@ class BillServiceTest {
                 .build();
 
         var billSummary = new BillPayloads.BillSummaryResponse(
-                UUID.randomUUID(), 5, BillStatus.OPEN, null,
-                "John Doe", UUID.randomUUID().toString(), new BigDecimal("50.00"), BigDecimal.ZERO,
-                2, null, null, null, null
+                UUID.randomUUID(), 5, BillStatus.OPEN, UUID.randomUUID().toString(), new BigDecimal("50.00"),
+                2, null, null, null
         );
         var expectedResponse = new BillPayloads.BillPageResponse(
                 List.of(billSummary), 0, 20, 1, 1, true, true, false, false
@@ -395,9 +339,8 @@ class BillServiceTest {
         when(billMock.getLines()).thenReturn(List.of(billLine));
 
         var expectedResponse = new BillPayloads.BillSummaryWithLinesResponse(
-                billId, 5, BillStatus.OPEN, null,
-                "John Doe", UUID.randomUUID().toString(), new BigDecimal("60.00"), BigDecimal.ZERO,
-                List.of(), null, null, null, null
+                billId, 5, BillStatus.OPEN,UUID.randomUUID().toString(), new BigDecimal("60.00"),
+                List.of(), null, null, null
         );
         when(mapper.toSummaryWithLinesResponse(any(), anyList())).thenReturn(expectedResponse);
 

@@ -14,7 +14,7 @@ import java.util.UUID;
 interface BillMapper {
 
     @Mapping(target = "tableNumber", source = "request.tableNumber")
-    @Mapping(target = "waiterInfo", source = "request.waiterInfo")
+    @Mapping(target = "userId", source = "request.userId")
     @Mapping(target = "initialLines", source = "billLines")
     OpenBillCommand toCommand(BillPayloads.OpenBillRequest request, List<BillLine> billLines);
 
@@ -24,10 +24,8 @@ interface BillMapper {
 
     @Mapping(target = "id", source = "bill.id.value")
     @Mapping(target = "tableNumber", source = "bill.tableNumber.value")
-    @Mapping(target = "waiterName", expression = "java(bill.getWaiterInfo().firstName() + \" \" + bill.getWaiterInfo().lastName())")
-    @Mapping(target = "waiterEmployeeId", expression = "java(bill.getWaiterInfo().employeeId())")
+    @Mapping(target = "userId", expression = "java(bill.getUserId())")
     @Mapping(target = "totalAmount", expression = "java(bill.getTotalAmount() != null ? bill.getTotalAmount().amount() : null)")
-    @Mapping(target = "paidAmount", expression = "java(bill.getPaidAmount() != null ? bill.getPaidAmount().amount() : null)")
     @Mapping(target = "billLines", source = "lines")
     BillPayloads.BillSummaryWithLinesResponse toSummaryWithLinesResponse(Bill bill, List<BillPayloads.BillLineResponse> lines);
 

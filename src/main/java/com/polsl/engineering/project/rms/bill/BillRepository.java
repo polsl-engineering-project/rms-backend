@@ -2,7 +2,6 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.common.db.QueryLogging;
-import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -27,18 +26,13 @@ class BillRepository {
                 id,
                 table_number,
                 bill_status,
-                payment_method,
-                waiter_first_name,
-                waiter_last_name,
-                waiter_employee_id,
+                user_id,
                 total_amount,
-                paid_amount,
                 opened_at,
                 closed_at,
-                paid_at,
                 updated_at,
                 version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String BILL_UPDATE_SQL = """
@@ -46,15 +40,10 @@ class BillRepository {
             SET
                 table_number = ?,
                 bill_status = ?,
-                payment_method = ?,
-                waiter_first_name = ?,
-                waiter_last_name = ?,
-                waiter_employee_id = ?,
+                user_id = ?,
                 total_amount = ?,
-                paid_amount = ?,
                 opened_at = ?,
                 closed_at = ?,
-                paid_at = ?,
                 updated_at = ?,
                 version = version + 1
             WHERE id = ? AND version = ?
@@ -89,39 +78,25 @@ class BillRepository {
             Bill bill = jdbcTemplate.queryForObject(billSql, (rs, _) -> {
                 var id = rs.getObject("id", UUID.class);
                 var idVo = new BillId(id);
-
                 var tableNumber = TableNumber.of(rs.getInt("table_number"));
                 var status = BillStatus.valueOf(rs.getString("bill_status"));
-
-                var paymentMethod = Optional.ofNullable(rs.getString("payment_method"))
-                        .map(PaymentMethod::valueOf)
-                        .orElse(null);
-
-                var waiterInfo = dbMapper.mapWaiterInfo(rs);
+                var userId = rs.getString("user_id");
                 var totalAmount = dbMapper.mapMoney(rs, "total_amount");
-                var paidAmount = dbMapper.mapMoney(rs, "paid_amount");
-
                 var openedAt = dbMapper.mapInstant(rs, "opened_at");
                 var closedAt = dbMapper.mapInstant(rs, "closed_at");
-                var paidAt = dbMapper.mapInstant(rs, "paid_at");
                 var updatedAt = dbMapper.mapInstant(rs, "updated_at");
-
                 var version = rs.getLong("version");
-
                 var lines = loadBillLines(id);
 
                 return Bill.reconstruct(
                         idVo,
                         tableNumber,
                         status,
-                        paymentMethod,
                         lines,
-                        waiterInfo,
+                        userId,
                         totalAmount,
-                        paidAmount,
                         openedAt,
                         closedAt,
-                        paidAt,
                         updatedAt,
                         version
                 );
@@ -197,30 +172,22 @@ class BillRepository {
             var id = rs.getObject("id", UUID.class);
             var tableNumber = rs.getInt("table_number");
             var status = BillStatus.valueOf(rs.getString("bill_status"));
-            var paymentMethod = Optional.ofNullable(rs.getString("payment_method")).map(PaymentMethod::valueOf).orElse(null);
-            var waiterName = rs.getString("waiter_first_name") + " " + rs.getString("waiter_last_name");
-            var waiterEmployeeId = rs.getString("waiter_employee_id");
+            var userId = rs.getString("user_id");
             var totalAmount = dbMapper.mapMoney(rs, "total_amount");
-            var paidAmount = dbMapper.mapMoney(rs, "paid_amount");
             var itemCount = rs.getInt("item_count");
             var openedAt = dbMapper.mapInstant(rs, "opened_at");
             var closedAt = dbMapper.mapInstant(rs, "closed_at");
-            var paid_at = dbMapper.mapInstant(rs, "paid_at");
             var updatedAt = dbMapper.mapInstant(rs, "updated_at");
 
             return new BillPayloads.BillSummaryResponse(
                     id,
                     tableNumber,
                     status,
-                    paymentMethod,
-                    waiterName,
-                    waiterEmployeeId,
+                    userId,
                     totalAmount.amount(),
-                    paidAmount.amount(),
                     itemCount,
                     openedAt,
                     closedAt,
-                    paid_at,
                     updatedAt
             );
         }, selectParams.toArray());

@@ -37,15 +37,10 @@ class BillQueryBuilder {
                     b.id,
                     b.table_number,
                     b.bill_status,
-                    b.payment_method,
-                    b.waiter_first_name,
-                    b.waiter_last_name,
-                    b.waiter_employee_id,
+                    b.user_id,
                     b.total_amount,
-                    b.paid_amount,
                     b.opened_at,
                     b.closed_at,
-                    b.paid_at,
                     b.updated_at,
                     COALESCE(COUNT(bl.id), 0) as item_count
                 FROM bills b
@@ -54,9 +49,9 @@ class BillQueryBuilder {
 
         appendWhereClause(sql, selectParams);
 
-        sql.append("\nGROUP BY b.id, b.table_number, b.bill_status, b.payment_method, b.waiter_first_name, ")
-                .append("b.waiter_last_name, b.waiter_employee_id, b.total_amount, b.paid_amount, ")
-                .append("b.opened_at, b.closed_at, b.paid_at, b.updated_at");
+        sql.append("\nGROUP BY b.id, b.table_number, b.bill_status, ")
+                .append("b.user_id, b.total_amount, ")
+                .append("b.opened_at, b.closed_at, b.updated_at");
 
         appendOrderBy(sql);
         appendPagination(sql, page, size);
@@ -79,11 +74,6 @@ class BillQueryBuilder {
             criteria.statuses().forEach(status -> params.add(status.name()));
         }
 
-        if (criteria.paymentMethod() != null) {
-            conditions.add("b.payment_method = ?");
-            params.add(criteria.paymentMethod().name());
-        }
-
         if (criteria.openedFrom() != null) {
             conditions.add("b.opened_at >= ?");
             params.add(LocalDateTime.ofInstant(criteria.openedFrom(), ZoneOffset.UTC));
@@ -102,32 +92,11 @@ class BillQueryBuilder {
             params.add(LocalDateTime.ofInstant(criteria.closedTo(), ZoneOffset.UTC));
         }
 
-        if (criteria.paidFrom() != null) {
-            conditions.add("b.paid_at >= ?");
-            params.add(LocalDateTime.ofInstant(criteria.paidFrom(), ZoneOffset.UTC));
-        }
-        if (criteria.paidTo() != null) {
-            conditions.add("b.paid_at <= ?");
-            params.add(LocalDateTime.ofInstant(criteria.paidTo(), ZoneOffset.UTC));
+        if (criteria.userId() != null && !criteria.userId().isBlank()) {
+            conditions.add("b.user_id = ?");
+            params.add(criteria.userId());
         }
 
-        if (criteria.waiterEmployeeId() != null && !criteria.waiterEmployeeId().isBlank()) {
-            conditions.add("b.waiter_employee_id = ?");
-            params.add(criteria.waiterEmployeeId());
-        }
-        if (criteria.waiterFirstName() != null && !criteria.waiterFirstName().isBlank()) {
-            conditions.add("LOWER(b.waiter_first_name) LIKE ?");
-            params.add("%" + criteria.waiterFirstName().toLowerCase() + "%");
-        }
-        if (criteria.waiterLastName() != null && !criteria.waiterLastName().isBlank()) {
-            conditions.add("LOWER(b.waiter_last_name) LIKE ?");
-            params.add("%" + criteria.waiterLastName().toLowerCase() + "%");
-        }
-
-        if (criteria.tableNumber() != null) {
-            conditions.add("b.table_number = ?");
-            params.add(criteria.tableNumber());
-        }
         if (criteria.tableNumbers() != null && !criteria.tableNumbers().isEmpty()) {
             var placeholders = String.join(", ", "?".repeat(criteria.tableNumbers().size()).split(""));
             conditions.add("b.table_number IN (" + placeholders + ")");
@@ -141,15 +110,6 @@ class BillQueryBuilder {
         if (criteria.maxTotalAmount() != null) {
             conditions.add("b.total_amount <= ?");
             params.add(criteria.maxTotalAmount());
-        }
-
-        if (criteria.minPaidAmount() != null) {
-            conditions.add("b.paid_amount >= ?");
-            params.add(criteria.minPaidAmount());
-        }
-        if (criteria.maxPaidAmount() != null) {
-            conditions.add("b.paid_amount <= ?");
-            params.add(criteria.maxPaidAmount());
         }
 
         if (criteria.menuItemId() != null && !criteria.menuItemId().isBlank()) {
@@ -175,12 +135,10 @@ class BillQueryBuilder {
         switch (sortBy) {
             case OPENED_AT -> sql.append("b.opened_at");
             case CLOSED_AT -> sql.append("b.closed_at");
-            case PAID_AT ->  sql.append("b.paid_at");
             case UPDATED_AT -> sql.append("b.updated_at");
             case TOTAL_AMOUNT -> sql.append("b.total_amount");
-            case PAID_AMOUNT -> sql.append("b.paid_amount");
             case TABLE_NUMBER -> sql.append("b.table_number");
-            case WAITER_LAST_NAME -> sql.append("b.waiter_last_name, b.waiter_first_name");
+            case USER_ID -> sql.append("b.user_id");
         }
 
         sql.append(" ").append(direction.name());

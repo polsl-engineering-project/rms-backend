@@ -1,7 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.cmd.AddItemsToBillCommand;
-import com.polsl.engineering.project.rms.bill.cmd.PayBillCommand;
 import com.polsl.engineering.project.rms.bill.cmd.RemoveItemsFromBillCommand;
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
@@ -78,14 +77,6 @@ class BillService {
         billRepository.updateWithoutLines(bill);
     }
 
-    @Transactional
-    void payBill(String billId, BillPayloads.PayBillRequest request) {
-        var bill = findByIdOrThrow(billId);
-        var cmd = new PayBillCommand(request.paymentMethod(), Money.of(request.paidAmount()));
-        var result = bill.pay(cmd, clock);
-        validateActionResult(result);
-        billRepository.updateWithoutLines(bill);
-    }
 
     BillPayloads.BillPageResponse searchBills(BillPayloads.BillSearchRequest request) {
         var page = validatePage(request.page());

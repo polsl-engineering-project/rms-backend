@@ -2,7 +2,6 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.ContainersEnvironment;
 import com.polsl.engineering.project.rms.bill.vo.*;
-import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,16 +58,10 @@ class BillRepositoryIT extends ContainersEnvironment {
         assertThat(bill.getId()).isEqualTo(billId);
         assertThat(bill.getTableNumber().value()).isEqualTo(5);
         assertThat(bill.getStatus()).isEqualTo(BillStatus.OPEN);
-        assertThat(bill.getPaymentMethod()).isNull();
 
-        var waiterInfo = bill.getWaiterInfo();
-        assertThat(waiterInfo).isNotNull();
-        assertThat(waiterInfo.firstName()).isEqualTo("John");
-        assertThat(waiterInfo.lastName()).isEqualTo("Doe");
-        assertThat(waiterInfo.employeeId()).isEqualTo("W123");
+        assertThat(bill.getUserId()).isEqualTo("W123");
 
         assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(new BigDecimal("72.00"));
-        assertThat(bill.getPaidAmount().amount()).isEqualByComparingTo(BigDecimal.ZERO);
 
         var lines = bill.getLines();
         assertThat(lines).hasSize(2);
@@ -157,9 +150,10 @@ class BillRepositoryIT extends ContainersEnvironment {
                 new BillLine("soup", 2, new Money(new BigDecimal("8.00")), "Soup", 1L),
                 new BillLine("bread", 1, new Money(new BigDecimal("3.00")), "Bread", 1L)
         );
+        var userId = UUID.randomUUID().toString();
         var cmd = new com.polsl.engineering.project.rms.bill.cmd.OpenBillCommand(
                 TableNumber.of(15),
-                new WaiterInfo("Bob", "Brown", UUID.randomUUID().toString()),
+                userId,
                 lines
         );
 
@@ -185,12 +179,12 @@ class BillRepositoryIT extends ContainersEnvironment {
         );
         assertThat(tableNumber).isEqualTo(15);
 
-        var waiterFirstName = jdbcTemplate.queryForObject(
-                "SELECT waiter_first_name FROM bills WHERE id = ?",
+        var dbUserId = jdbcTemplate.queryForObject(
+                "SELECT user_id FROM bills WHERE id = ?",
                 String.class,
                 bill.getId().value()
         );
-        assertThat(waiterFirstName).isEqualTo("Bob");
+        assertThat(dbUserId).isEqualTo(userId);
 
         List<Map<String, Object>> linesFromDb = jdbcTemplate.queryForList(
                 "SELECT menu_item_id, quantity, unit_price FROM bill_lines WHERE bill_id = ?",
@@ -347,27 +341,5 @@ class BillRepositoryIT extends ContainersEnvironment {
         assertThat(result.totalElements()).isEqualTo(1);
         assertThat(result.content().get(0).status()).isEqualTo(BillStatus.OPEN);
         assertThat(result.content().get(0).tableNumber()).isEqualTo(5);
-    }
-
-    @Test
-    @DisplayName("Given paid bill in search criteria, When searchBills, Then returns paid bill")
-    void GivenPaidBillCriteria_WhenSearchBills_ThenReturnsPaidBill() {
-        // given
-        var criteria = BillPayloads.BillSearchRequest.builder()
-                .statuses(List.of(BillStatus.PAID))
-                .paymentMethod(PaymentMethod.CASH)
-                .page(0)
-                .size(10)
-                .build();
-
-        // when
-        var result = underTest.searchBills(criteria, 0, 10);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.content()).hasSize(1);
-        assertThat(result.content().get(0).status()).isEqualTo(BillStatus.PAID);
-        assertThat(result.content().get(0).paymentMethod()).isEqualTo(PaymentMethod.CASH);
-        assertThat(result.content().get(0).tableNumber()).isEqualTo(10);
     }
 }

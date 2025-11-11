@@ -96,18 +96,4 @@ class BillController {
         billService.closeBill(id);
         return ResponseEntity.noContent().build();
     }
-
-    @Operation(summary = "Pay a bill")
-    @ApiResponse(responseCode = "204", description = "Bill payed successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid input data",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Bill not found",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @PostMapping("/{id}/pay")
-    ResponseEntity<Void> payBill(
-            @PathVariable("id") String id,
-            @Valid @RequestBody BillPayloads.PayBillRequest payBillRequest) {
-        billService.payBill(id, payBillRequest);
-        return ResponseEntity.noContent().build();
-    }
 }

@@ -2,11 +2,9 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.BillLine;
 import com.polsl.engineering.project.rms.bill.vo.Money;
-import com.polsl.engineering.project.rms.bill.vo.WaiterInfo;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -15,17 +13,6 @@ import java.util.TimeZone;
 
 @Component
 class BillDbMapper {
-
-    WaiterInfo mapWaiterInfo(ResultSet rs) {
-        try {
-            var firstName = rs.getString("waiter_first_name");
-            var lastName = rs.getString("waiter_last_name");
-            var employeeId = rs.getString("waiter_employee_id");
-            return new WaiterInfo(firstName, lastName, employeeId);
-        } catch (SQLException e) {
-            throw new DataRetrievalFailureException("Failed to map WaiterInfo from ResultSet", e);
-        }
-    }
 
     Instant mapInstant(ResultSet rs, String column) {
         try {

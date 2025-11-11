@@ -1,8 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
-import com.polsl.engineering.project.rms.bill.vo.WaiterInfo;
-import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
@@ -23,7 +21,7 @@ public class BillPayloads {
 
     public record OpenBillRequest(
             @NotNull @Min(1) Integer tableNumber,
-            @Valid @NotNull WaiterInfo waiterInfo,
+            @NotNull String userId,
             @NotEmpty @Valid List<BillLine> initialLines
     ) {
     }
@@ -44,12 +42,6 @@ public class BillPayloads {
     ) {
     }
 
-    public record PayBillRequest(
-            @NotNull PaymentMethod paymentMethod,
-            @NotNull Double paidAmount
-    ){
-    }
-
     public record BillOpenedResponse(
             UUID id,
             Integer tableNumber
@@ -63,23 +55,12 @@ public class BillPayloads {
             Instant openedTo,
             Instant closedFrom,
             Instant closedTo,
-            Instant paidFrom,
-            Instant paidTo,
-            PaymentMethod paymentMethod,
-            String waiterEmployeeId,
-            String waiterFirstName,
-            String waiterLastName,
-            @Min(1)
-            Integer tableNumber,
+            String userId,
             List<@Min(1) Integer> tableNumbers,
             @PositiveOrZero
             BigDecimal minTotalAmount,
             @PositiveOrZero
             BigDecimal maxTotalAmount,
-            @PositiveOrZero
-            BigDecimal minPaidAmount,
-            @PositiveOrZero
-            BigDecimal maxPaidAmount,
             String menuItemId,
             BillSortField sortBy,
             SortDirection sortDirection,
@@ -101,15 +82,11 @@ public class BillPayloads {
             UUID id,
             Integer tableNumber,
             BillStatus status,
-            PaymentMethod paymentMethod,
-            String waiterName,
-            String waiterEmployeeId,
+            String userId,
             BigDecimal totalAmount,
-            BigDecimal paidAmount,
             Integer itemCount,
             Instant openedAt,
             Instant closedAt,
-            Instant paidAt,
             Instant updatedAt
     ) {
     }
@@ -118,15 +95,11 @@ public class BillPayloads {
             UUID id,
             Integer tableNumber,
             BillStatus status,
-            PaymentMethod paymentMethod,
-            String waiterName,
-            String waiterEmployeeId,
+            String userId,
             BigDecimal totalAmount,
-            BigDecimal paidAmount,
             List<BillLineResponse> billLines,
             Instant openedAt,
             Instant closedAt,
-            Instant paidAt,
             Instant updatedAt
     ) {
 
@@ -156,12 +129,10 @@ public class BillPayloads {
     public enum BillSortField {
         OPENED_AT,
         CLOSED_AT,
-        PAID_AT,
         UPDATED_AT,
         TOTAL_AMOUNT,
-        PAID_AMOUNT,
         TABLE_NUMBER,
-        WAITER_LAST_NAME
+        USER_ID
     }
 
     public enum SortDirection {

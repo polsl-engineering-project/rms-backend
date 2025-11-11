@@ -2,8 +2,6 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
-import com.polsl.engineering.project.rms.bill.vo.WaiterInfo;
-import com.polsl.engineering.project.rms.order.vo.PaymentMethod;
 import com.polsl.engineering.project.rms.security.jwt.JwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,13 +47,12 @@ class BillControllerTest {
         // given
         var request = BillPayloads.BillSearchRequest.builder()
                 .statuses(List.of(BillStatus.OPEN))
-                .tableNumber(5)
+                .tableNumbers(List.of(5))
                 .build();
 
         var billSummary = new BillPayloads.BillSummaryResponse(
-                UUID.randomUUID(), 5, BillStatus.OPEN, null,
-                "John Doe", UUID.randomUUID().toString(), new BigDecimal("50.00"), BigDecimal.ZERO,
-                2, null, null, null, null
+                UUID.randomUUID(), 5, BillStatus.OPEN, UUID.randomUUID().toString(), new BigDecimal("50.00"),
+                2, null, null, null
         );
         var expectedResponse = new BillPayloads.BillPageResponse(
                 List.of(billSummary), 0, 20, 1, 1, true, true, false, false
@@ -84,9 +81,8 @@ class BillControllerTest {
         var billId = UUID.randomUUID();
         var billLineResponse = new BillPayloads.BillLineResponse(UUID.randomUUID(), 2, "Pizza", 1L);
         var expectedResponse = new BillPayloads.BillSummaryWithLinesResponse(
-                billId, 7, BillStatus.OPEN, null,
-                "Jane Smith", UUID.randomUUID().toString(), new BigDecimal("60.00"), BigDecimal.ZERO,
-                List.of(billLineResponse), null, null, null, null
+                billId, 7, BillStatus.OPEN,UUID.randomUUID().toString(), new BigDecimal("60.00"),
+                List.of(billLineResponse), null, null, null
         );
 
         when(billService.searchBill(billId.toString())).thenReturn(expectedResponse);
@@ -110,7 +106,7 @@ class BillControllerTest {
         // given
         var menuItemId = UUID.randomUUID();
         var billLine = new BillPayloads.BillLine(menuItemId, 2, 1L);
-        var waiterInfo = new WaiterInfo("Alice", "Johnson", UUID.randomUUID().toString());
+        var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(
                 10,
                 waiterInfo,
@@ -136,7 +132,7 @@ class BillControllerTest {
         verify(billService).openBill(captor.capture());
         var captured = captor.getValue();
         assertThat(captured.tableNumber()).isEqualTo(10);
-        assertThat(captured.waiterInfo().firstName()).isEqualTo("Alice");
+        assertThat(captured.userId()).isEqualTo(waiterInfo);
         assertThat(captured.initialLines()).hasSize(1);
         verifyNoMoreInteractions(billService);
     }
@@ -147,7 +143,7 @@ class BillControllerTest {
         // given
         var menuItemId = UUID.randomUUID();
         var billLine = new BillPayloads.BillLine(menuItemId, 1, 0L);
-        var waiterInfo = new WaiterInfo("Bob", "Brown", UUID.randomUUID().toString());
+        var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(
                 null, // invalid
                 waiterInfo,
@@ -168,10 +164,9 @@ class BillControllerTest {
     @DisplayName("Given invalid open bill request - empty lines, When POST /api/v1/bills/open, Then 400")
     void GivenInvalidOpenBillRequest_EmptyLines_WhenPostOpenBill_Then400() throws Exception {
         // given
-        var waiterInfo = new WaiterInfo("Carol", "White", UUID.randomUUID().toString());
         var request = new BillPayloads.OpenBillRequest(
                 5,
-                waiterInfo,
+                UUID.randomUUID().toString(),
                 List.of() // invalid
         );
 
@@ -277,60 +272,5 @@ class BillControllerTest {
         // then
         result.andExpect(status().isNoContent());
         verify(billService).closeBill(billId);
-    }
-
-    @Test
-    @DisplayName("Given valid pay bill request, When POST /api/v1/bills/{id}/pay, Then 204")
-    void GivenValidPayBillRequest_WhenPostPayBill_Then204() throws Exception {
-        // given
-        var billId = UUID.randomUUID().toString();
-        var request = new BillPayloads.PayBillRequest(PaymentMethod.CARD, 100.50);
-
-        // when
-        var result = mockMvc.perform(post("/api/v1/bills/" + billId + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
-
-        // then
-        result.andExpect(status().isNoContent());
-
-        ArgumentCaptor<BillPayloads.PayBillRequest> captor = ArgumentCaptor.forClass(BillPayloads.PayBillRequest.class);
-        verify(billService).payBill(eq(billId), captor.capture());
-        assertThat(captor.getValue().paymentMethod()).isEqualTo(PaymentMethod.CARD);
-        assertThat(captor.getValue().paidAmount()).isEqualTo(100.50);
-    }
-
-    @Test
-    @DisplayName("Given invalid pay bill request - null payment method, When POST /api/v1/bills/{id}/pay, Then 400")
-    void GivenInvalidPayBillRequest_NullPaymentMethod_WhenPostPayBill_Then400() throws Exception {
-        // given
-        var billId = UUID.randomUUID().toString();
-        var request = new BillPayloads.PayBillRequest(null, 50.00);
-
-        // when
-        var result = mockMvc.perform(post("/api/v1/bills/" + billId + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
-
-        // then
-        result.andExpect(status().isBadRequest());
-        verifyNoInteractions(billService);
-    }
-
-    @Test
-    @DisplayName("Given invalid pay bill request - null paid amount, When POST /api/v1/bills/{id}/pay, Then 400")
-    void GivenInvalidPayBillRequest_NullPaidAmount_WhenPostPayBill_Then400() throws Exception {
-        // given
-        var billId = UUID.randomUUID().toString();
-        var request = new BillPayloads.PayBillRequest(PaymentMethod.CASH, null);
-
-        // when
-        var result = mockMvc.perform(post("/api/v1/bills/" + billId + "/pay")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
-
-        // then
-        result.andExpect(status().isBadRequest());
-        verifyNoInteractions(billService);
     }
 }

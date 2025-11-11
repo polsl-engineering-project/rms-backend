@@ -23,7 +23,7 @@ class BillAddItemsTest {
     private static Bill createOpenBill(List<BillLine> initialLines) {
         var cmd = new OpenBillCommand(
                 TableNumber.of(5),
-                new WaiterInfo("John", "Doe", UUID.randomUUID().toString()),
+                UUID.randomUUID().toString(),
                 initialLines
         );
         var result = Bill.open(cmd, FIXED_CLOCK);
@@ -126,35 +126,6 @@ class BillAddItemsTest {
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getError()).isEqualTo("Can only add items to an open bill");
         assertThat(bill.getLines()).hasSize(1); // unchanged
-    }
-
-    @Test
-    @DisplayName("Given paid bill, When adding items, Then failure")
-    void GivenPaidBill_WhenAddItems_ThenFailure() {
-        // given
-        var cakeId = UUID.randomUUID().toString();
-        var waterId = UUID.randomUUID().toString();
-        var bill = createOpenBill(List.of(
-                line(cakeId, 1, "15.00", "Cake", 1)
-        ));
-        assertThat(bill.close(FIXED_CLOCK).isSuccess()).isTrue();
-        var payCmd = new com.polsl.engineering.project.rms.bill.cmd.PayBillCommand(
-                com.polsl.engineering.project.rms.order.vo.PaymentMethod.CASH,
-                Money.of("20.00")
-        );
-        assertThat(bill.pay(payCmd, FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(bill.getStatus()).isEqualTo(BillStatus.PAID);
-
-        var cmd = new AddItemsToBillCommand(List.of(
-                line(waterId, 1, "3.00", "Water", 1)
-        ));
-
-        // when
-        var result = bill.addItems(cmd, FIXED_CLOCK);
-
-        // then
-        assertThat(result.isFailure()).isTrue();
-        assertThat(result.getError()).isEqualTo("Can only add items to an open bill");
     }
 
     @Test
