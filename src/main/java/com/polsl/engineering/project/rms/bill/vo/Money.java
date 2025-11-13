@@ -1,9 +1,11 @@
 package com.polsl.engineering.project.rms.bill.vo;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-public record Money(BigDecimal amount) {
+public record Money(@JsonValue BigDecimal amount) {
 
     public static final Money ZERO = new Money(BigDecimal.ZERO);
 

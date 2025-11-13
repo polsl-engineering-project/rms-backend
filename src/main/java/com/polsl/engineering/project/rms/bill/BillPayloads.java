@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
+import com.polsl.engineering.project.rms.order.OrderPayloads;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
@@ -8,6 +9,7 @@ import lombok.Builder;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class BillPayloads {
@@ -138,5 +140,14 @@ public class BillPayloads {
     public enum SortDirection {
         ASC,
         DESC
+    }
+
+    public record BillWebsocketMessage(
+            String type,
+            Object data
+    ) {
+        static OrderPayloads.OrderWebsocketMessage error(String errorMessage) {
+            return new OrderPayloads.OrderWebsocketMessage("ERROR", Map.of("message", errorMessage));
+        }
     }
 }
