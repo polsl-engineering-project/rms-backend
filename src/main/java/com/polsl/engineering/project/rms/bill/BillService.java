@@ -28,6 +28,7 @@ class BillService {
     private final MenuApi menuApi;
     private final BillMapper mapper;
     private final Clock clock;
+    private final BillOutboxService billOutboxService;
 
     @Transactional
     BillPayloads.BillOpenedResponse openBill(BillPayloads.OpenBillRequest request) {
@@ -41,6 +42,7 @@ class BillService {
         var bill = result.getValue();
         billRepository.saveNewBill(bill);
 
+        saveEvents(bill);
         return mapper.toResponse(bill);
     }
 
@@ -51,6 +53,7 @@ class BillService {
         var cmd = new AddItemsToBillCommand(billLines);
         var result = bill.addItems(cmd, clock);
         validateActionResult(result);
+        saveEvents(bill);
         billRepository.updateWithLines(bill);
     }
 
@@ -66,6 +69,7 @@ class BillService {
         var cmd = new RemoveItemsFromBillCommand(removedLinesDomain);
         var result = bill.removeItems(cmd, clock);
         validateActionResult(result);
+        saveEvents(bill);
         billRepository.updateWithLines(bill);
     }
 
@@ -74,7 +78,26 @@ class BillService {
         var bill = findByIdOrThrow(billId);
         var result = bill.close(clock);
         validateActionResult(result);
+        saveEvents(bill);
         billRepository.updateWithoutLines(bill);
+    }
+
+    List<BillPayloads.BillSummaryWithLinesResponse> getOpenBills(){
+        return billRepository.findOpenBills().stream().map(bill -> {
+            var lines = bill.getLines().stream()
+                    .map(line -> {
+                        var menuItemId = UUID.fromString(line.menuItemId());
+                        return new BillPayloads.BillLineResponse(
+                                menuItemId,
+                                line.quantity(),
+                                line.menuItemName(),
+                                line.menuItemVersion()
+                        );
+                    })
+                    .toList();
+
+            return mapper.toSummaryWithLinesResponse(bill, lines);
+        }).toList();
     }
 
 
@@ -161,6 +184,13 @@ class BillService {
             throw new InvalidBillActionException(
                     "Table %d already has an open bill.".formatted(tableNumber)
             );
+        }
+    }
+
+    private void saveEvents(Bill bill) {
+        var events = bill.pullEvents();
+        for (var event : events) {
+            billOutboxService.persistEvent(bill.getId(), event);
         }
     }
 

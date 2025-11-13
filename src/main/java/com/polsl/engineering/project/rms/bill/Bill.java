@@ -1,5 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
+import com.polsl.engineering.project.rms.bill.event.*;
 import com.polsl.engineering.project.rms.common.result.Result;
 import com.polsl.engineering.project.rms.bill.cmd.*;
 import com.polsl.engineering.project.rms.bill.vo.*;
@@ -25,6 +26,9 @@ class Bill {
 
     @Getter(AccessLevel.NONE)
     private final List<BillLine> lines = new ArrayList<>();
+
+    @Getter(AccessLevel.NONE)
+    private final List<BillEvent> events = new ArrayList<>();
 
     private String userId;
 
@@ -82,6 +86,12 @@ class Bill {
         return bill;
     }
 
+    List<BillEvent> pullEvents() {
+        var emittedEvents = List.copyOf(events);
+        events.clear();
+        return emittedEvents;
+    }
+
     static Result<Bill> open(OpenBillCommand cmd, Clock clock) {
         var validationResult = validateBillOpening(cmd);
         if (validationResult.isFailure()) {
@@ -94,6 +104,13 @@ class Bill {
                 cmd.userId(),
                 clock
         );
+
+        bill.events.add(new BillOpenedEvent(
+                bill.id,
+                bill.tableNumber,
+                bill.lines,
+                bill.openedAt
+        ));
 
         return Result.ok(bill);
     }
@@ -126,6 +143,12 @@ class Bill {
         totalAmount = calculateTotal(lines);
         updatedAt = Instant.now(clock);
 
+        events.add(new BillAddLinesEvent(
+                id,
+               lines,
+               updatedAt
+        ));
+
         return Result.ok(null);
     }
 
@@ -154,6 +177,12 @@ class Bill {
         totalAmount = calculateTotal(lines);
         updatedAt = Instant.now(clock);
 
+        events.add(new BillRemoveLinesEvent(
+                id,
+                removeLines,
+                updatedAt
+        ));
+
         return Result.ok(null);
     }
 
@@ -168,6 +197,11 @@ class Bill {
         status = BillStatus.CLOSED;
         closedAt = Instant.now(clock);
         updatedAt = Instant.now(clock);
+
+        events.add(new BillClosedEvent(
+                id,
+                closedAt
+        ));
 
         return Result.ok(null);
     }

@@ -132,7 +132,7 @@ class OrderControllerTest {
         result.andExpect(status().isNoContent());
         ArgumentCaptor<OrderPayloads.ApproveOrderByKitchenRequest> captor = ArgumentCaptor.forClass(OrderPayloads.ApproveOrderByKitchenRequest.class);
         verify(orderService).approveByKitchen(eq(id), captor.capture());
-        assertThat(captor.getValue().updatedEstimatedMinutes()).isEqualTo(15);
+        assertThat(captor.getValue().estimatedPreparationMinutes()).isEqualTo(15);
     }
 
     @Test

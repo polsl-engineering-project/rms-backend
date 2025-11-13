@@ -8,7 +8,7 @@ spring:
     password: ${DB_PASSWORD:rms_password}
     driver-class-name: org.postgresql.Driver
   jpa:
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -21,6 +21,11 @@ jwt.expirationMillis: ${JWT_LIFETIME:3600000}
 order-outbox-event-poller:
   fixed-delay-ms: 300
 order-outbox-event-cleaner:
+  fixed-delay-ms: 3600000
+
+bill-outbox-event-poller:
+  fixed-delay-ms: 300
+bill-outbox-event-cleaner:
   fixed-delay-ms: 3600000
 
 refresh-tokens:

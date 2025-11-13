@@ -30,7 +30,7 @@ public class OrderPayloads {
             @Valid @NotNull CustomerInfo customerInfo,
             @Valid @NotNull Address address,
             @NotNull DeliveryMode deliveryMode,
-            @NotNull LocalTime scheduledFor,
+            LocalTime scheduledFor,
             @NotEmpty @Valid List<OrderLine> orderLines
     ) {
     }
@@ -55,7 +55,7 @@ public class OrderPayloads {
     }
 
     public record  ApproveOrderByKitchenRequest(
-            @PositiveOrZero Integer updatedEstimatedMinutes
+            @PositiveOrZero Integer estimatedPreparationMinutes
     ) {
     }
 

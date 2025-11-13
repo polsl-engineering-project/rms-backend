@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.cmd.OpenBillCommand;
+import com.polsl.engineering.project.rms.bill.event.BillEvent;
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
@@ -46,6 +47,9 @@ class BillServiceTest {
     @InjectMocks
     BillService underTest;
 
+    @Mock
+    BillOutboxService outboxService;
+
     @Test
     @DisplayName("Given valid open bill request, When openBill, Then saves bill and returns response")
     void GivenValidOpenBillRequest_WhenOpenBill_ThenSavesBillAndReturnsResponse() {
@@ -79,6 +83,7 @@ class BillServiceTest {
         assertThat(response.tableNumber()).isEqualTo(5);
         verify(billRepository).saveNewBill(any(Bill.class));
         verify(mapper).toResponse(any(Bill.class));
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -98,6 +103,7 @@ class BillServiceTest {
                 .hasMessageContaining("Table 7 already has an open bill");
 
         verify(billRepository, never()).saveNewBill(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -118,6 +124,7 @@ class BillServiceTest {
                 .hasMessageContaining(payloadLineId.toString());
 
         verify(billRepository, never()).saveNewBill(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -138,6 +145,7 @@ class BillServiceTest {
                 .isInstanceOf(MenuItemVersionMismatchException.class);
 
         verify(billRepository, never()).saveNewBill(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -148,6 +156,9 @@ class BillServiceTest {
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
         when(billMock.addItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        var eventMock = mock(BillEvent.class);
+        when(billMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(billMock.getId()).thenReturn(BillId.generate());
 
         var menuItemId = UUID.randomUUID();
         var payloadLine = new BillPayloads.BillLine(menuItemId, 2, 1L);
@@ -162,6 +173,7 @@ class BillServiceTest {
         // then
         verify(billRepository).updateWithLines(billMock);
         verify(billMock).addItems(any(), any(Clock.class));
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -181,6 +193,7 @@ class BillServiceTest {
                 .hasMessageContaining(billId);
 
         verify(billRepository, never()).updateWithLines(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -205,6 +218,7 @@ class BillServiceTest {
                 .hasMessageContaining("cannot add");
 
         verify(billRepository, never()).updateWithLines(billMock);
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -215,6 +229,9 @@ class BillServiceTest {
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
         when(billMock.removeItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        var eventMock = mock(BillEvent.class);
+        when(billMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(billMock.getId()).thenReturn(BillId.generate());
 
         var menuItemId = UUID.randomUUID();
         var removeLine = new BillPayloads.RemoveLine(menuItemId, 1);
@@ -226,6 +243,7 @@ class BillServiceTest {
         // then
         verify(billRepository).updateWithLines(billMock);
         verify(billMock).removeItems(any(), any(Clock.class));
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -245,6 +263,7 @@ class BillServiceTest {
                 .hasMessageContaining(billId);
 
         verify(billRepository, never()).updateWithLines(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -255,6 +274,9 @@ class BillServiceTest {
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
         when(billMock.close(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        var eventMock = mock(BillEvent.class);
+        when(billMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(billMock.getId()).thenReturn(BillId.generate());
 
         // when
         underTest.closeBill(billId);
@@ -262,6 +284,7 @@ class BillServiceTest {
         // then
         verify(billRepository).updateWithoutLines(billMock);
         verify(billMock).close(any(Clock.class));
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -277,6 +300,7 @@ class BillServiceTest {
                 .hasMessageContaining(billId);
 
         verify(billRepository, never()).updateWithoutLines(any());
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
     @Test
@@ -294,6 +318,7 @@ class BillServiceTest {
                 .hasMessageContaining("cannot close");
 
         verify(billRepository, never()).updateWithoutLines(billMock);
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
 

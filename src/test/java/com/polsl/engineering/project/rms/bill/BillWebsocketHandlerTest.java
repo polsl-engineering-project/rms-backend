@@ -1,0 +1,118 @@
+package com.polsl.engineering.project.rms.bill;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class BillWebsocketHandlerTest {
+
+    @Mock
+    BillService billService;
+
+    @Mock
+    BillWebsocketSessionRegistry sessionRegistry;
+
+    BillWebsocketHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        handler = new BillWebsocketHandler(billService, new ObjectMapper(), sessionRegistry);
+    }
+
+    @Test
+    @DisplayName("GivenOpenBills_WhenAfterConnectionEstablished_ThenSendInitialDataAndRegisterSession")
+    void GivenOpenBills_WhenAfterConnectionEstablished_ThenSendInitialDataAndRegisterSession() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(billService.getOpenBills()).thenReturn(List.of());
+        var realOm = new ObjectMapper();
+        handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(captor.capture());
+        assertThat(captor.getValue().getPayload()).contains("INITIAL_DATA");
+        verify(sessionRegistry).registerSession(session);
+    }
+
+    @Test
+    @DisplayName("GivenBillServiceThrows_WhenAfterConnectionEstablished_ThenCloseSessionAndRegisterSession")
+    void GivenBillServiceThrows_WhenAfterConnectionEstablished_ThenCloseSessionAndRegisterSession() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(billService.getOpenBills()).thenThrow(new RuntimeException("service error"));
+        var realOm = new ObjectMapper();
+        handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        verify(session, never()).sendMessage(any());
+        verify(session).close();
+        verify(sessionRegistry).registerSession(session);
+    }
+
+    @Test
+    @DisplayName("GivenSession_WhenAfterConnectionClosed_ThenUnregisterSession")
+    void GivenSession_WhenAfterConnectionClosed_ThenUnregisterSession() {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        handler = new BillWebsocketHandler(billService, new ObjectMapper(), sessionRegistry);
+
+        //when
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        //then
+        verify(sessionRegistry).unregisterSession(session);
+    }
+
+    @Test
+    @DisplayName("GivenSession_WhenAfterConnectionClosedWithError_ThenUnregisterSession")
+    void GivenSession_WhenAfterConnectionClosedWithError_ThenUnregisterSession() {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        handler = new BillWebsocketHandler(billService, new ObjectMapper(), sessionRegistry);
+
+        //when
+        handler.afterConnectionClosed(session, CloseStatus.SERVER_ERROR);
+
+        //then
+        verify(sessionRegistry).unregisterSession(session);
+    }
+
+    @Test
+    @DisplayName("GivenSessionSendMessageFails_WhenAfterConnectionEstablished_ThenCloseSession")
+    void GivenSessionSendMessageFails_WhenAfterConnectionEstablished_ThenCloseSession() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(billService.getOpenBills()).thenReturn(List.of());
+        doThrow(new RuntimeException("send failed")).when(session).sendMessage(any(TextMessage.class));
+        var realOm = new ObjectMapper();
+        handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        verify(session).close();
+        verify(sessionRegistry).registerSession(session);
+    }
+}

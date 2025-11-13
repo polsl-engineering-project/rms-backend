@@ -66,6 +66,10 @@ class BillRepository {
             WHERE bill_id = ?
             """;
 
+    private static final String BILL_LINES_FIND_ALL_OPENED = """
+            SELECT * FROM bills where bill_status = 'OPEN'
+            """;
+
     Optional<Bill> findById(BillId billId) {
         final var billSql = """
                 SELECT *
@@ -106,6 +110,37 @@ class BillRepository {
         } catch (EmptyResultDataAccessException _) {
             return Optional.empty();
         }
+    }
+
+    List<Bill> findOpenBills() {
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, BILL_LINES_FIND_ALL_OPENED);
+
+        return jdbcTemplate.query(BILL_LINES_FIND_ALL_OPENED, (rs, rowNum) -> {
+            var id = rs.getObject("id", UUID.class);
+            var idVo = new BillId(id);
+            var tableNumber = TableNumber.of(rs.getInt("table_number"));
+            var status = BillStatus.valueOf(rs.getString("bill_status"));
+            var userId = rs.getString("user_id");
+            var totalAmount = dbMapper.mapMoney(rs, "total_amount");
+            var openedAt = dbMapper.mapInstant(rs, "opened_at");
+            var closedAt = dbMapper.mapInstant(rs, "closed_at");
+            var updatedAt = dbMapper.mapInstant(rs, "updated_at");
+            var version = rs.getLong("version");
+            var lines = loadBillLines(id);
+
+            return Bill.reconstruct(
+                    idVo,
+                    tableNumber,
+                    status,
+                    lines,
+                    userId,
+                    totalAmount,
+                    openedAt,
+                    closedAt,
+                    updatedAt,
+                    version
+            );
+        });
     }
 
     boolean openBillExistsForTable(Integer tableNumber) {
