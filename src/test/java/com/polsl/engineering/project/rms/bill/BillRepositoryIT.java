@@ -342,4 +342,23 @@ class BillRepositoryIT extends ContainersEnvironment {
         assertThat(result.content().get(0).status()).isEqualTo(BillStatus.OPEN);
         assertThat(result.content().get(0).tableNumber()).isEqualTo(5);
     }
+
+    @Test
+    @DisplayName("Given various bills_When findOpenBills_Then returns only open bills with lines")
+    void GivenVariousBills_WhenFindOpenBills_ThenReturnsOnlyOpenBillsWithLines() {
+        // when
+        var activeOrders = underTest.findOpenBills();
+
+        // then
+        assertThat(activeOrders)
+                .isNotEmpty()
+                .allMatch(o -> o.getStatus().equals(BillStatus.OPEN));
+
+        assertThat(activeOrders).extracting(Bill::getId)
+                .containsExactlyInAnyOrder(
+                        BillId.from("00000000-0000-0000-0000-000000000001")
+                );
+
+        activeOrders.forEach(o -> assertThat(o.getLines()).isNotEmpty());
+    }
 }
