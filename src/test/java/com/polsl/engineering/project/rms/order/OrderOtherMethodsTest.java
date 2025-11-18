@@ -4,12 +4,14 @@ import com.polsl.engineering.project.rms.order.cmd.ApproveOrderByKitchenCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlaceDeliveryOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
 import com.polsl.engineering.project.rms.order.vo.*;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,6 +47,15 @@ class OrderOtherMethodsTest {
         var placed = Order.placeDeliveryOrder(cmd, FIXED_CLOCK);
         assertThat(placed.isSuccess()).isTrue();
         return placed.getValue();
+    }
+
+    // helper user principals
+    private static UserPrincipal nonDriverUser() {
+        return new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+    }
+
+    private static UserPrincipal driverUser() {
+        return new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.DRIVER));
     }
 
     @Test
@@ -95,7 +106,7 @@ class OrderOtherMethodsTest {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
 
         // when
-        var completeResult = order.complete(FIXED_CLOCK);
+        var completeResult = order.complete(nonDriverUser(), FIXED_CLOCK);
 
         // then
         assertThat(completeResult.isSuccess()).isTrue();
@@ -164,7 +175,7 @@ class OrderOtherMethodsTest {
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
 
         //when
-        var completeResult = order.complete(FIXED_CLOCK);
+        var completeResult = order.complete(nonDriverUser(), FIXED_CLOCK);
 
         //then
         assertThat(completeResult.isSuccess()).isTrue();
@@ -185,5 +196,42 @@ class OrderOtherMethodsTest {
         //then
         assertThat(cancelResult.isSuccess()).isTrue();
         assertThat(order.isFinished()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Given delivery order, When driver completes in delivery, Then COMPLETED")
+    void GivenDeliveryOrder_WhenDriverCompletes_ThenCompleted() {
+        // given
+        var order = placeDelivery(List.of(line("pizza", 1, "30.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.startDelivery(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_DELIVERY);
+
+        // when
+        var completeResult = order.complete(driverUser(), FIXED_CLOCK);
+
+        // then
+        assertThat(completeResult.isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("Given delivery order ready for driver, When driver attempts to complete early, Then failure")
+    void GivenDeliveryOrderReadyForDriver_WhenDriverAttemptsCompleteEarly_ThenFailure() {
+        // given
+        var order = placeDelivery(List.of(line("pasta", 1, "20.00", 1)));
+        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_DRIVER);
+
+        // when
+        var completeResult = order.complete(driverUser(), FIXED_CLOCK);
+
+        // then
+        assertThat(completeResult.isFailure()).isTrue();
+        assertThat(completeResult.getError()).isEqualTo("Only DELIVERY orders with status IN_DELIVERY can be completed.");
     }
 }

@@ -5,6 +5,7 @@ import com.polsl.engineering.project.rms.order.cmd.*;
 import com.polsl.engineering.project.rms.order.event.OrderEvent;
 import com.polsl.engineering.project.rms.order.event.*;
 import com.polsl.engineering.project.rms.order.vo.*;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -339,12 +340,18 @@ class Order {
         return Result.ok(null);
     }
 
-    Result<Void> complete(Clock clock) {
+    Result<Void> complete(UserPrincipal userPrincipal, Clock clock) {
         if (type == OrderType.PICKUP && status != OrderStatus.READY_FOR_PICKUP) {
             return Result.failure("Only PICKUP orders with status READY_FOR_PICKUP can be completed.");
         }
         if (type == OrderType.DELIVERY && status != OrderStatus.IN_DELIVERY) {
             return Result.failure("Only DELIVERY orders with status IN_DELIVERY can be completed.");
+        }
+
+        if (type != OrderType.DELIVERY &&
+                userPrincipal.roles().contains(UserPrincipal.Role.DRIVER)
+        ) {
+            return Result.failure("User with DRIVER role cannot complete non-DELIVERY orders.");
         }
 
         status = OrderStatus.COMPLETED;

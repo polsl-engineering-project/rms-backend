@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Order actions", description = "Operations related to order management")
@@ -96,8 +98,8 @@ class OrderController {
     @ApiResponse(responseCode = "404", description = "Order not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/{id}/complete")
-    ResponseEntity<Void> completeOrder(@PathVariable("id") String id) {
-        orderService.completeOrder(id);
+    ResponseEntity<Void> completeOrder(@PathVariable("id") String id, @AuthenticationPrincipal UserPrincipal user) {
+        orderService.completeOrder(id, user);
         return ResponseEntity.noContent().build();
     }
 

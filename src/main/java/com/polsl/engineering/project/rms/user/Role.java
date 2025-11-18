@@ -6,7 +6,8 @@ enum Role {
     ADMIN("ADMIN"),
     MANAGER("MANAGER"),
     WAITER("WAITER"),
-    COOK("COOK");
+    COOK("COOK"),
+    DRIVER("DRIVER");
 
     private final String name;
 
@@ -25,6 +26,7 @@ enum Role {
             case MANAGER -> UserPrincipal.Role.MANAGER;
             case WAITER -> UserPrincipal.Role.WAITER;
             case COOK -> UserPrincipal.Role.COOK;
+            case DRIVER -> UserPrincipal.Role.DRIVER;
         };
     }
 

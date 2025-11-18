@@ -23,7 +23,8 @@ public record UserPrincipal(UUID id, List<Role> roles) implements Principal {
         ADMIN,
         MANAGER,
         WAITER,
-        COOK;
+        COOK,
+        DRIVER;
 
         public static Optional<Role> safeValueOf(String roleName) {
             try {
