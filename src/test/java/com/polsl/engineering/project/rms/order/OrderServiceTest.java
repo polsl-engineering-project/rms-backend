@@ -8,6 +8,7 @@ import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
 import com.polsl.engineering.project.rms.order.event.OrderEvent;
 import com.polsl.engineering.project.rms.order.vo.OrderId;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -207,6 +208,69 @@ class OrderServiceTest {
         //then
         verify(jdbcRepository).updateWithLines(orderMock);
         verify(outboxService).persistEvent(any(), any());
+    }
+
+    // New tests for completeOrder
+    @Test
+    @DisplayName("Given existing order_When completeOrder_Then updates repository and persists events")
+    void GivenExistingOrder_WhenCompleteOrder_ThenUpdatesRepoAndPersistsEvents() {
+        // given
+        var id = UUID.randomUUID();
+        var orderId = id.toString();
+        var orderMock = mock(Order.class);
+        when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
+        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        var eventMock = mock(OrderEvent.class);
+        when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(orderMock.getId()).thenReturn(OrderId.generate());
+
+        var user = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // when
+        underTest.completeOrder(orderId, user);
+
+        // then
+        verify(jdbcRepository).updateWithoutLines(orderMock);
+        verify(outboxService).persistEvent(any(), any());
+    }
+
+    @Test
+    @DisplayName("Given order not found_When completeOrder_Then throws ResourceNotFoundException")
+    void GivenOrderNotFound_WhenCompleteOrder_ThenThrowsResourceNotFoundException() {
+        // given
+        var id = UUID.randomUUID();
+        var orderId = id.toString();
+        when(jdbcRepository.findById(any())).thenReturn(Optional.empty());
+
+        var user = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // when / then
+        assertThatThrownBy(() -> underTest.completeOrder(orderId, user))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(orderId);
+
+        verify(jdbcRepository, never()).updateWithoutLines(any());
+        verify(outboxService, never()).persistEvent(any(), any());
+    }
+
+    @Test
+    @DisplayName("Given failing aggregate_When completeOrder_Then throws InvalidOrderActionException")
+    void GivenFailingAggregate_WhenCompleteOrder_ThenThrowsInvalidOrderActionException() {
+        // given
+        var id = UUID.randomUUID();
+        var orderId = id.toString();
+        var orderMock = mock(Order.class);
+        when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
+        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.failure("not allowed"));
+
+        var user = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // when / then
+        assertThatThrownBy(() -> underTest.completeOrder(orderId, user))
+                .isInstanceOf(com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException.class);
+
+        verify(jdbcRepository, never()).updateWithoutLines(orderMock);
+        verify(outboxService, never()).persistEvent(any(), any());
     }
 
 }

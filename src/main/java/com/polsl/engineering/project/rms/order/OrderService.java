@@ -11,6 +11,7 @@ import com.polsl.engineering.project.rms.order.vo.OrderId;
 import com.polsl.engineering.project.rms.order.vo.OrderLine;
 import com.polsl.engineering.project.rms.order.vo.OrderLineRemoval;
 import com.polsl.engineering.project.rms.order.cmd.ChangeOrderLinesCommand;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -97,9 +98,9 @@ class OrderService {
     }
 
     @Transactional
-    void completeOrder(String orderId) {
+    void completeOrder(String orderId, UserPrincipal userPrincipal) {
         var order = findByIdOrThrow(orderId);
-        var result = order.complete(clock);
+        var result = order.complete(userPrincipal, clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
         saveEvents(order);

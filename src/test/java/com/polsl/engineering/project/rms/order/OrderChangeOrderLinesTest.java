@@ -5,12 +5,14 @@ import com.polsl.engineering.project.rms.order.cmd.ChangeOrderLinesCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlaceDeliveryOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
 import com.polsl.engineering.project.rms.order.vo.*;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,6 +61,15 @@ class OrderChangeOrderLinesTest {
 
     private static OrderLineRemoval lineRemoval(String id, int qty) {
         return new OrderLineRemoval(id, qty);
+    }
+
+    // helper user principals
+    private static UserPrincipal nonDriverUser() {
+        return new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+    }
+
+    private static UserPrincipal driverUser() {
+        return new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.DRIVER));
     }
 
     @Test
@@ -167,7 +178,7 @@ class OrderChangeOrderLinesTest {
         var order = createPickupOrderConfirmed(List.of(line("cake", 1, "15.00", 1)));
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
-        assertThat(order.complete(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.complete(nonDriverUser(), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
 
         var cmd = new ChangeOrderLinesCommand(List.of(line("tea", 1, "5.00", 1)), List.of(), 0);
@@ -286,6 +297,22 @@ class OrderChangeOrderLinesTest {
         // then
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getError()).isEqualTo("No order lines to add or remove were provided.");
+    }
+
+    @Test
+    @DisplayName("Given driver role, When attempting to complete non-delivery order, Then failure")
+    void GivenDriverRole_WhenCompleteNonDelivery_ThenFailure() {
+        // given: pickup order
+        var order = createPickupOrderConfirmed(List.of(line("sandwich", 1, "8.00", 1)));
+        assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
+
+        // when: driver attempts to complete
+        var completeResult = order.complete(driverUser(), FIXED_CLOCK);
+
+        // then
+        assertThat(completeResult.isFailure()).isTrue();
+        assertThat(completeResult.getError()).isEqualTo("User with DRIVER role cannot complete non-DELIVERY orders.");
     }
 
 }

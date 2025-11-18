@@ -174,7 +174,7 @@ class OrderControllerTest {
 
         // then
         result.andExpect(status().isNoContent());
-        verify(orderService).completeOrder(id);
+        verify(orderService).completeOrder(eq(id), any());
     }
 
     @Test
