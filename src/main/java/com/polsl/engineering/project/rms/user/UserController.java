@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.user;
 
 import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.validation.constraint.NotNullAndTrimmedLengthInRange;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,6 +14,7 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -69,6 +71,14 @@ class UserController {
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(userService.findAll(page, size));
+    }
+    @Operation(summary = "Get authenticated user details")
+    @ApiResponse(responseCode = "200", description = "Users retrieved successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid pagination parameters",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping("/me")
+    ResponseEntity<UserResponse> me(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(userService.findByIdOrElseThrow(userPrincipal.id().toString()));
     }
 
     @Operation(summary = "Delete user by ID")
