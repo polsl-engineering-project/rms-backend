@@ -35,8 +35,11 @@ class UserController {
     @ApiResponse(responseCode = "400", description = "Invalid input data",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping
-    ResponseEntity<UserResponse> createUser(@RequestBody @Valid CreateUserRequest request) {
-        return ResponseEntity.ok(userService.createUser(request));
+    ResponseEntity<UserResponse> createUser(
+            @RequestBody @Valid CreateUserRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        return ResponseEntity.ok(userService.createUser(request, userPrincipal));
     }
 
     @Operation(summary = "Get user by ID")

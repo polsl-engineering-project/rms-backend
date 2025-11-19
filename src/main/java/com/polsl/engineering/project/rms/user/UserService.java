@@ -5,7 +5,6 @@ import com.polsl.engineering.project.rms.security.UserCredentials;
 import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.security.jwt.JwtSubjectExistenceByIdVerifier;
-import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,8 +26,13 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    UserResponse createUser(CreateUserRequest request) {
-        validateRole(request.role(), List.of());
+    UserResponse createUser(CreateUserRequest request, UserPrincipal loggedInUser) {
+        if (request.role() == Role.ADMIN) {
+            throw new ForbiddenActionException("Creating user with admin role is not allowed");
+        }
+        if (request.role() == Role.MANAGER && !loggedInUser.isAdmin()) {
+            throw new ForbiddenActionException("Only admin can create managers");
+        }
 
         var username = request.username().trim();
         validateUsername(username);
@@ -111,15 +115,6 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     public Optional<UserCredentials> getUserCredentials(String username) {
         return repository.findByUsername(username)
                 .map(user -> new UserCredentials(user.getId(), user.getPassword(),List.of(user.getRole().toUserPrincipalRole())));
-    }
-
-    private void validateRole(Role role, List<Role> loggedInUserRoles) {
-        if (role == Role.ADMIN) {
-            throw new SettingAdminRoleIsNotAllowedException();
-        }
-        if (!loggedInUserRoles.contains(Role.ADMIN) && role == Role.MANAGER) {
-            throw new ForbiddenActionException("Setting MANAGER role is not allowed for non-admin users");
-        }
     }
 
     private void validateUsername(UUID id, String username) {

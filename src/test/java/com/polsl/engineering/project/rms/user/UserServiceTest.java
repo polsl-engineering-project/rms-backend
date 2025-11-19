@@ -5,7 +5,6 @@ import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParam
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
-import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +42,7 @@ class UserServiceTest {
     UserMapper userMapper;
 
     @Test
-    @DisplayName("Creating user with ADMIN role should throw SettingAdminRoleIsNotAllowedException")
+    @DisplayName("Creating user with ADMIN role should throw ForbiddenActionException")
     void GivenRequestWithAdminRole_WhenCreateUser_ThenThrowSettingAdminRoleIsNotAllowedException() {
         // Given
         var request = Instancio.create(CreateUserRequest.class)
@@ -51,9 +50,11 @@ class UserServiceTest {
                 .role(Role.ADMIN)
                 .build();
 
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
+
         // When & Then
-        assertThatThrownBy(() -> userService.createUser(request))
-                .isInstanceOf(SettingAdminRoleIsNotAllowedException.class);
+        assertThatThrownBy(() -> userService.createUser(request, principal))
+                .isInstanceOf(ForbiddenActionException.class);
     }
 
     @Test
@@ -68,8 +69,10 @@ class UserServiceTest {
         when(userRepository.existsByUsername(request.username()))
                 .thenReturn(true);
 
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
         // When & Then
-        assertThatThrownBy(() -> userService.createUser(request))
+        assertThatThrownBy(() -> userService.createUser(request, principal))
                 .isInstanceOf(NotUniqueUsernameException.class);
     }
 
@@ -98,8 +101,10 @@ class UserServiceTest {
                 .role(request.role())
                 .build();
 
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
         // When
-        userService.createUser(request);
+        userService.createUser(request, principal);
 
         // Then
         var ignoredFields = new String[] {"id", "createdAt", "updatedAt"};
@@ -212,7 +217,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Updating user with ADMIN role should throw SettingAdminRoleIsNotAllowedException")
+    @DisplayName("Updating user with ADMIN role should throw ForbiddenActionException")
     void GivenRequestWithAdminRole_WhenUpdateUser_ThenThrowSettingAdminRoleIsNotAllowedException() {
         // Given
         var userId = UUID.randomUUID();
@@ -520,8 +525,10 @@ class UserServiceTest {
                 .role(Role.MANAGER)
                 .build();
 
+        var nonAdminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
         // When & Then
-        assertThatThrownBy(() -> userService.createUser(request))
+        assertThatThrownBy(() -> userService.createUser(request, nonAdminPrincipal))
                 .isInstanceOf(ForbiddenActionException.class);
     }
 
@@ -571,6 +578,68 @@ class UserServiceTest {
         // When & Then
         assertThatThrownBy(() -> userService.updateUser(userIdStr, request, principal))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Admin creating user with MANAGER role should save user and map to UserResponse")
+    void GivenAdminCreatingManager_WhenCreateUser_ThenSavesUserAndMapsToUserResponse() {
+        // Given
+        var request = Instancio.create(CreateUserRequest.class)
+                .toBuilder()
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.existsByUsername(request.username().trim()))
+                .thenReturn(false);
+
+        var encodedPassword = "encodedPassword";
+        when(passwordEncoder.encode(request.password()))
+                .thenReturn(encodedPassword);
+
+        var userToSave = User.builder()
+                .username(request.username().trim())
+                .password(encodedPassword)
+                .firstName(request.firstName().trim())
+                .lastName(request.lastName().trim())
+                .phoneNumber(request.phoneNumber().trim())
+                .role(request.role())
+                .build();
+
+        var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
+        // When
+        userService.createUser(request, adminPrincipal);
+
+        // Then
+        var ignoredFields = new String[] {"id", "createdAt", "updatedAt"};
+
+        verify(userRepository).save(recursiveEq(userToSave, ignoredFields));
+        verify(userMapper).userToUserResponse(recursiveEq(userToSave, ignoredFields));
+    }
+
+    @Test
+    @DisplayName("Creating user with username containing surrounding spaces and already existing trimmed username should throw NotUniqueUsernameException")
+    void GivenRequestWithUsernameWithSpaces_WhenCreateUser_ThenThrowNotUniqueUsernameException() {
+        // Given
+        var rawUsername = "  existingUser  ";
+        var trimmed = rawUsername.trim();
+
+        var request = CreateUserRequest.builder()
+                .username(rawUsername)
+                .password("validPass1")
+                .firstName("John")
+                .lastName("Doe")
+                .phoneNumber("123456789")
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.existsByUsername(trimmed)).thenReturn(true);
+
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.createUser(request, principal))
+                .isInstanceOf(NotUniqueUsernameException.class);
     }
 
 }

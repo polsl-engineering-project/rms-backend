@@ -218,7 +218,7 @@ class UserControllerTestTest {
                 request.role()
         );
 
-        when(userService.createUser(request)).thenReturn(expectedResponse);
+        when(userService.createUser(eq(request), isNull())).thenReturn(expectedResponse);
 
         // act & assert
         mockMvc.perform(post("/api/v1/users")
