@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -247,6 +248,20 @@ class UserControllerTestTest {
                 .andExpect(status().isNoContent());
 
         verify(userService, times(1)).updateUser(eq(expectedId.toString()), eq(request), isNull());
+    }
+
+    @DisplayName("Given valid DELETE /api/v1/users/{id} -> 204")
+    @Test
+    void GivenValidDeleteUser_WhenDelete_Then204() throws Exception {
+        // arrange
+        var id = UUID.randomUUID();
+        doNothing().when(userService).deleteUser(eq(id.toString()), isNull());
+
+        // act & assert
+        mockMvc.perform(delete("/api/v1/users/" + id))
+                .andExpect(status().isNoContent());
+
+        verify(userService, times(1)).deleteUser(eq(id.toString()), isNull());
     }
 
     @ParameterizedTest(name = "Given invalid CreateUserRequest - When POST /api/v1/users - Then 400 status code")

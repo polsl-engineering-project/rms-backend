@@ -95,8 +95,8 @@ class UserController {
     @ApiResponse(responseCode = "404", description = "User not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> deleteUser(@PathVariable("id") String id) {
-        userService.deleteUser(id);
+    ResponseEntity<Void> deleteUser(@PathVariable("id") String id, @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        userService.deleteUser(id, userPrincipal);
         return ResponseEntity.noContent().build();
     }
 
