@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.security.auth.dto.TokenPair;
+import com.polsl.engineering.project.rms.security.exception.JwtSubjectDoesNotExistException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,16 +15,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.testcontainers.shaded.org.yaml.snakeyaml.tokens.Token;
 
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,6 +45,8 @@ class JwtServiceTest {
     private RefreshTokenRepository refreshTokenRepository;
     @Mock
     private UserCredentialsProvider credentialsProvider;
+    @Mock
+    private JwtSubjectExistenceByIdVerifier subjectExistenceByIdVerifier;
 
     @BeforeEach
     void setUp() throws NoSuchAlgorithmException {
@@ -61,7 +61,8 @@ class JwtServiceTest {
                 refreshTokenRepository,
                 new SecureRandom(),
                 messageDigest,
-                credentialsProvider
+                credentialsProvider,
+                subjectExistenceByIdVerifier
         );
     }
 
@@ -105,6 +106,8 @@ class JwtServiceTest {
                 .withExpiresAt(Instant.now().plusSeconds(3600))
                 .sign(algorithm);
 
+        when(subjectExistenceByIdVerifier.doesExist(userId.toString())).thenReturn(true);
+
         // when
         UserPrincipal principal = underTest.parseJwt(token);
 
@@ -126,6 +129,8 @@ class JwtServiceTest {
                 .withExpiresAt(Instant.now().plusSeconds(3600))
                 .sign(algorithm);
 
+        when(subjectExistenceByIdVerifier.doesExist(userId.toString())).thenReturn(true);
+
         // when
         UserPrincipal principal = underTest.parseJwt(token);
 
@@ -146,10 +151,13 @@ class JwtServiceTest {
                 .withExpiresAt(Instant.now().plusSeconds(3600))
                 .sign(algorithm);
 
+        when(subjectExistenceByIdVerifier.doesExist("not-a-uuid")).thenReturn(true);
+
         // when / then
         assertThatThrownBy(() -> underTest.parseJwt(token))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
     @Test
     @DisplayName("Given recently used refresh token When JwtService refreshTokens Then revokes family and throws")
     void GivenRecentlyUsedToken_WhenRefreshTokens_ThenRevokesFamilyAndThrows() {
@@ -178,6 +186,26 @@ class JwtServiceTest {
                 .hasMessageContaining("Token reuse detected");
 
         verify(refreshTokenRepository).findByTokenFamilyAndRevokedFalse(oldToken.getTokenFamily());
+    }
+
+    @Test
+    @DisplayName("Given token subject does not exist When parseJwt Then throws JwtSubjectDoesNotExistException")
+    void GivenTokenSubjectDoesNotExist_WhenParseJwt_ThenThrowsJwtSubjectDoesNotExistException() {
+        // given
+        UUID userId = UUID.randomUUID();
+        String token = JWT.create()
+                .withSubject(userId.toString())
+                .withClaim("roles", List.of("ADMIN"))
+                .withIssuedAt(Instant.now())
+                .withExpiresAt(Instant.now().plusSeconds(3600))
+                .sign(algorithm);
+
+        when(subjectExistenceByIdVerifier.doesExist(userId.toString())).thenReturn(false);
+
+        // when / then
+        assertThatThrownBy(() -> underTest.parseJwt(token))
+                .isInstanceOf(JwtSubjectDoesNotExistException.class)
+                .hasMessageContaining(userId.toString());
     }
 
     // helpers

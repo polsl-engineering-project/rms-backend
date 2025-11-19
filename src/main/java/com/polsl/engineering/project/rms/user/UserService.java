@@ -5,6 +5,7 @@ import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatExcep
 import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.security.UserCredentials;
 import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
+import com.polsl.engineering.project.rms.security.jwt.JwtSubjectExistenceByIdVerifier;
 import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-class UserService implements UserCredentialsProvider {
+class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVerifier {
 
     private final UserRepository repository;
     private final UserMapper mapper;
@@ -127,4 +128,8 @@ class UserService implements UserCredentialsProvider {
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
     }
 
+    @Override
+    public boolean doesExist(String id) {
+        return repository.findById(toUUIDOrThrow(id)).isPresent();
+    }
 }

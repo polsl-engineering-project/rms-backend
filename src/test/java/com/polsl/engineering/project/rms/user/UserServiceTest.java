@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.polsl.engineering.project.rms.MockitoAssertJMatchers.recursiveEq;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -282,6 +283,51 @@ class UserServiceTest {
 
         // Then
         verify(userRepository).deleteUserById(userId);
+    }
+
+    @Test
+    @DisplayName("doesExist with invalid UUID string should throw InvalidUUIDFormatException")
+    void GivenInvalidUUIDString_WhenDoesExist_ThenThrowsInvalidUUIDFormatException() {
+        // Given
+        var invalidUUID = "invalid-uuid";
+
+        // When & Then
+        assertThatThrownBy(() -> userService.doesExist(invalidUUID))
+                .isInstanceOf(InvalidUUIDFormatException.class);
+    }
+
+    @Test
+    @DisplayName("doesExist with valid UUID string and existing user should return true")
+    void GivenValidUUIDStringAndExistingUser_WhenDoesExist_ThenReturnsTrue() {
+        // Given
+        var userId = UUID.randomUUID();
+        var user = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // When
+        var result = userService.doesExist(userId.toString());
+
+        // Then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("doesExist with valid UUID string and non-existing user should return false")
+    void GivenValidUUIDStringAndNonExistingUser_WhenDoesExist_ThenReturnsFalse() {
+        // Given
+        var userId = UUID.randomUUID();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // When
+        var result = userService.doesExist(userId.toString());
+
+        // Then
+        assertThat(result).isFalse();
     }
 
 }
