@@ -19,6 +19,10 @@ public record UserPrincipal(UUID id, List<Role> roles) implements Principal {
         return id.toString();
     }
 
+    public boolean isAdmin() {
+        return roles.contains(Role.ADMIN);
+    }
+
     public enum Role implements GrantedAuthority {
         ADMIN,
         MANAGER,

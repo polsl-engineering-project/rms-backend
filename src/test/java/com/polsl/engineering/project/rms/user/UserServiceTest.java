@@ -3,6 +3,7 @@ package com.polsl.engineering.project.rms.user;
 import com.polsl.engineering.project.rms.common.exception.ForbiddenActionException;
 import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParamsException;
 import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
+import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
 import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
@@ -24,8 +25,6 @@ import java.util.UUID;
 import static com.polsl.engineering.project.rms.MockitoAssertJMatchers.recursiveEq;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -235,7 +234,7 @@ class UserServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> userService.updateUser(userIdStr, request, principal))
-                .isInstanceOf(SettingAdminRoleIsNotAllowedException.class);
+                .isInstanceOf(ForbiddenActionException.class);
     }
 
     @Test
@@ -304,8 +303,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Admin modifying admin user should not change username nor save the entity")
-    void GivenAdminLoggedIn_WhenModifyingAdminUser_ThenDoesNotSaveOrValidateUsername() {
+    @DisplayName("Admin modifying admin user should throw ForbiddenActionException")
+    void GivenAdminLoggedIn_WhenModifyingAdminUser_ThenThrowForbiddenActionException() {
         // Given
         var userId = UUID.randomUUID();
         var userIdStr = userId.toString();
@@ -325,13 +324,118 @@ class UserServiceTest {
 
         var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
 
+        // When & Then
+        assertThatThrownBy(() -> userService.updateUser(userIdStr, request, adminPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Non-admin modifying manager should throw ForbiddenActionException")
+    void GivenNonAdminModifyingManager_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var request = Instancio.create(UpdateUserRequest.class)
+                .toBuilder()
+                .role(Role.WAITER)
+                .build();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.updateUser(userIdStr, request, principal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Non-admin modifying non-manager should update user")
+    void GivenNonAdminModifyingNonManager_ThenUpdatesUser() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        var request = UpdateUserRequest.builder()
+                .username(existingUser.getUsername())
+                .firstName("New")
+                .lastName("Name")
+                .phoneNumber(existingUser.getPhoneNumber())
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.findByUsername(request.username().trim())).thenReturn(Optional.of(existingUser));
+
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
+
+        // When
+        userService.updateUser(userIdStr, request, principal);
+
+        // Then
+        var expected = existingUser.toBuilder()
+                .username(request.username().trim())
+                .firstName(request.firstName().trim())
+                .lastName(request.lastName().trim())
+                .phoneNumber(request.phoneNumber().trim())
+                .role(request.role())
+                .build();
+
+        verify(userRepository).save(recursiveEq(expected, new String[]{"createdAt","updatedAt"}));
+    }
+
+    @Test
+    @DisplayName("Admin assigning MANAGER role should update user")
+    void GivenAdminAssigningManagerRole_ThenUpdatesUser() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        var request = UpdateUserRequest.builder()
+                .username(existingUser.getUsername())
+                .firstName("Admin")
+                .lastName("Promote")
+                .phoneNumber(existingUser.getPhoneNumber())
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.findByUsername(request.username().trim())).thenReturn(Optional.of(existingUser));
+
+        var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
         // When
         userService.updateUser(userIdStr, request, adminPrincipal);
 
         // Then
-        // Should not save the entity and should not validate/lookup username
-        verify(userRepository, never()).save(any());
-        verify(userRepository, never()).findByUsername(anyString());
+        var expected = existingUser.toBuilder()
+                .username(request.username().trim())
+                .firstName(request.firstName().trim())
+                .lastName(request.lastName().trim())
+                .phoneNumber(request.phoneNumber().trim())
+                .role(request.role())
+                .build();
+
+        verify(userRepository).save(recursiveEq(expected, new String[]{"createdAt","updatedAt"}));
     }
 
     @Test
@@ -446,6 +550,27 @@ class UserServiceTest {
         // When & Then
         assertThatThrownBy(() -> userService.updateUser(userIdStr, request, principal))
                 .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Updating non-existing user should throw ResourceNotFoundException")
+    void GivenNonExistingUser_WhenUpdateUser_ThenThrowResourceNotFoundException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var request = Instancio.create(UpdateUserRequest.class)
+                .toBuilder()
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.updateUser(userIdStr, request, principal))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
 }

@@ -70,25 +70,31 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
         var id = toUUIDOrThrow(strId);
         var user = findByIdOrElseThrow(id);
 
-        var loggedInUserRoles = Role.fromUserPrincipalRoles(loggedInUser.roles());
-        if (!loggedInUserRoles.contains(Role.ADMIN) && user.getRole() == Role.ADMIN) {
-            throw new ForbiddenActionException("Modifying admin user by non-admin is not allowed");
+        if (request.role() == Role.ADMIN) {
+            throw new ForbiddenActionException("Setting admin role is not allowed");
         }
-
-        validateRole(request.role(), loggedInUserRoles);
+        if (user.getRole() == Role.ADMIN) {
+            throw new ForbiddenActionException("Modifying admin user is not allowed");
+        }
+        if (user.getRole() == Role.MANAGER && !loggedInUser.isAdmin()) {
+            throw new ForbiddenActionException("Only admin can modify managers");
+        }
+        if (request.role() == Role.MANAGER && !loggedInUser.isAdmin()) {
+            throw new ForbiddenActionException("Only admin can assign manager role");
+        }
 
         user.setFirstName(request.firstName().trim());
         user.setLastName(request.lastName().trim());
         user.setPhoneNumber(request.phoneNumber().trim());
 
-        if (user.getRole() == Role.ADMIN) {
-            return;
+        user.setRole(request.role());
+
+        if (user.getRole() != Role.MANAGER || loggedInUser.isAdmin()) {
+            var username = request.username().trim();
+            validateUsername(id, username);
+            user.setUsername(username);
         }
 
-        var username = request.username().trim();
-        validateUsername(id, username);
-
-        user.setUsername(username);
         repository.save(user);
     }
 
