@@ -394,7 +394,7 @@ class UserServiceTest {
                 .role(request.role())
                 .build();
 
-        verify(userRepository).save(recursiveEq(expected, new String[]{"createdAt","updatedAt"}));
+        verify(userRepository).save(recursiveEq(expected, "createdAt","updatedAt"));
     }
 
     @Test
@@ -435,7 +435,7 @@ class UserServiceTest {
                 .role(request.role())
                 .build();
 
-        verify(userRepository).save(recursiveEq(expected, new String[]{"createdAt","updatedAt"}));
+        verify(userRepository).save(recursiveEq(expected, "createdAt","updatedAt"));
     }
 
     @Test
