@@ -16,6 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -45,7 +47,7 @@ class UserControllerTestTest {
                 .firstName("John")
                 .lastName("Doe")
                 .phoneNumber("123456789")
-                .role(Role.MANAGER)
+                .role(Role.WAITER)
                 .build();
     }
 
@@ -55,7 +57,7 @@ class UserControllerTestTest {
                 .firstName("John")
                 .lastName("Doe")
                 .phoneNumber("123456789")
-                .role(Role.MANAGER)
+                .role(Role.WAITER)
                 .build();
     }
 
@@ -244,7 +246,7 @@ class UserControllerTestTest {
                         .content(updateUserRequestJson(request)))
                 .andExpect(status().isNoContent());
 
-        verify(userService, times(1)).updateUser(expectedId.toString(), request);
+        verify(userService, times(1)).updateUser(eq(expectedId.toString()), eq(request), isNull());
     }
 
     @ParameterizedTest(name = "Given invalid CreateUserRequest - When POST /api/v1/users - Then 400 status code")

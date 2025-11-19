@@ -56,8 +56,12 @@ class UserController {
     @ApiResponse(responseCode = "404", description = "User not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PutMapping("/{id}")
-    ResponseEntity<Void> updateUser(@PathVariable("id") String id, @RequestBody @Valid UpdateUserRequest request) {
-        userService.updateUser(id, request);
+    ResponseEntity<Void> updateUser(
+            @PathVariable("id") String id,
+            @RequestBody @Valid UpdateUserRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        userService.updateUser(id, request, userPrincipal);
         return ResponseEntity.noContent().build();
     }
 
