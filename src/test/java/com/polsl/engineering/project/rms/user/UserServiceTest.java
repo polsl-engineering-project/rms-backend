@@ -66,8 +66,8 @@ class UserServiceTest {
                 .role(Role.WAITER)
                 .build();
 
-        when(userRepository.existsByUsername(request.username()))
-                .thenReturn(true);
+        when(userRepository.findByUsername(request.username()))
+                .thenReturn(Optional.of(Instancio.create(User.class)));
 
         var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
 
@@ -85,8 +85,8 @@ class UserServiceTest {
                 .role(Role.WAITER)
                 .build();
 
-        when(userRepository.existsByUsername(request.username()))
-                .thenReturn(false);
+        when(userRepository.findByUsername(request.username()))
+                .thenReturn(Optional.empty());
 
         var encodedPassword = "encodedPassword";
         when(passwordEncoder.encode(request.password()))
@@ -448,9 +448,10 @@ class UserServiceTest {
     void GivenInvalidUUIDString_WhenDeleteUser_ThenThrowsInvalidUUIDFormatException() {
         // Given
         var invalidUUID = "invalid-uuid";
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
 
         // When & Then
-        assertThatThrownBy(() -> userService.deleteUser(invalidUUID))
+        assertThatThrownBy(() -> userService.deleteUser(invalidUUID, principal))
                 .isInstanceOf(InvalidUUIDFormatException.class);
     }
 
@@ -461,14 +462,89 @@ class UserServiceTest {
         var userId = UUID.randomUUID();
         var userIdStr = userId.toString();
 
-        when(userRepository.deleteUserById(userId))
-                .thenReturn(1);
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
 
         // When
-        userService.deleteUser(userIdStr);
+        userService.deleteUser(userIdStr, principal);
 
         // Then
-        verify(userRepository).deleteUserById(userId);
+        verify(userRepository).delete(existingUser);
+    }
+
+    @Test
+    @DisplayName("Deleting ADMIN user should throw ForbiddenActionException")
+    void GivenDeletingAdminUser_WhenDeleteUser_ThenThrowsForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.ADMIN)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.deleteUser(userIdStr, principal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Deleting MANAGER by non-admin should throw ForbiddenActionException")
+    void GivenDeletingManagerByNonAdmin_WhenDeleteUser_ThenThrowsForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var nonAdminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.deleteUser(userIdStr, nonAdminPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Deleting MANAGER by admin should delete user")
+    void GivenDeletingManagerByAdmin_WhenDeleteUser_ThenDeletesUser() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
+        // When
+        userService.deleteUser(userIdStr, adminPrincipal);
+
+        // Then
+        verify(userRepository).delete(existingUser);
     }
 
     @Test
@@ -589,8 +665,8 @@ class UserServiceTest {
                 .role(Role.MANAGER)
                 .build();
 
-        when(userRepository.existsByUsername(request.username().trim()))
-                .thenReturn(false);
+        when(userRepository.findByUsername(request.username().trim()))
+                .thenReturn(Optional.empty());
 
         var encodedPassword = "encodedPassword";
         when(passwordEncoder.encode(request.password()))
@@ -633,7 +709,8 @@ class UserServiceTest {
                 .role(Role.WAITER)
                 .build();
 
-        when(userRepository.existsByUsername(trimmed)).thenReturn(true);
+        when(userRepository.findByUsername(trimmed))
+                .thenReturn(Optional.of(Instancio.create(User.class)));
 
         var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
 

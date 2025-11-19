@@ -103,12 +103,18 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     }
 
     @Transactional
-    void deleteUser(String strId) {
+    void deleteUser(String strId, UserPrincipal loggedInUser) {
         var id = toUUIDOrThrow(strId);
-        var deletedCount = repository.deleteUserById(id);
-        if (deletedCount == 0) {
-            throw new ResourceNotFoundException("User with id " + strId + " not found");
+        var user = findByIdOrElseThrow(id);
+
+        if (user.getRole() == Role.ADMIN) {
+            throw new ForbiddenActionException("Deleting admin user is not allowed");
         }
+        if (user.getRole() == Role.MANAGER && !loggedInUser.isAdmin()) {
+            throw new ForbiddenActionException("Only admin can delete managers");
+        }
+
+        repository.delete(user);
     }
 
     @Override
@@ -125,9 +131,7 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     }
 
     private void validateUsername(String username) {
-        if (repository.existsByUsername(username.trim())) {
-            throw new NotUniqueUsernameException(username);
-        }
+        validateUsername(null, username);
     }
 
     private UUID toUUIDOrThrow(String strId) {
