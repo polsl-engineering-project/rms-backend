@@ -11,22 +11,6 @@ import java.util.UUID;
 
 @Repository
 interface UserRepository extends JpaRepository<User, UUID> {
-    @Query("""
-            UPDATE User u
-            SET u.username = :username,
-                u.firstName = :firstName,
-                u.lastName = :lastName,
-                u.phoneNumber = :phoneNumber
-            WHERE u.id = :id
-            """)
-    @Modifying
-    int updateById(
-            @Param("id") UUID id,
-            @Param("username") String username,
-            @Param("firstName") String firstName,
-            @Param("lastName") String lastName,
-            @Param("phoneNumber") String phoneNumber
-    );
 
     @Query("""
             DELETE FROM User u

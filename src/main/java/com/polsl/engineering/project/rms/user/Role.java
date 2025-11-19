@@ -2,6 +2,8 @@ package com.polsl.engineering.project.rms.user;
 
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 
+import java.util.List;
+
 enum Role {
     ADMIN("ADMIN"),
     MANAGER("MANAGER"),
@@ -20,7 +22,7 @@ enum Role {
         return name;
     }
 
-    public UserPrincipal.Role toUserPrincipalRole() {
+    UserPrincipal.Role toUserPrincipalRole() {
         return switch(this) {
             case ADMIN -> UserPrincipal.Role.ADMIN;
             case MANAGER -> UserPrincipal.Role.MANAGER;
@@ -28,6 +30,22 @@ enum Role {
             case COOK -> UserPrincipal.Role.COOK;
             case DRIVER -> UserPrincipal.Role.DRIVER;
         };
+    }
+
+    private static Role fromUserPrincipal(UserPrincipal.Role role) {
+        return switch (role) {
+            case ADMIN -> ADMIN;
+            case MANAGER -> MANAGER;
+            case WAITER -> WAITER;
+            case COOK -> COOK;
+            case DRIVER -> DRIVER;
+        };
+    }
+
+    static List<Role> fromUserPrincipalRoles(List<UserPrincipal.Role> roles) {
+        return roles.stream()
+                .map(Role::fromUserPrincipal)
+                .toList();
     }
 
 }

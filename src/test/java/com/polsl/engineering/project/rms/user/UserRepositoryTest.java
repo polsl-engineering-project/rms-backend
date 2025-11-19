@@ -30,69 +30,6 @@ class UserRepositoryTest extends ContainersEnvironment {
     }
 
     @Test
-    @DisplayName("Given id of user that not exists, When updateById, Then returns zero")
-    void GivenIdOfUserThatNotExists_WhenUpdateById_ThenReturnsZero() {
-        // Given
-        User user = createNotPersistedUser();
-
-        em.persistAndFlush(user);
-
-        var id = UUID.randomUUID();
-        var newUsername = "newusername";
-        var newFirstName = "NewFirstName";
-        var newLastName = "NewLastName";
-        var newPhoneNumber = "123456789";
-
-        // When
-        int updatedCount = underTest.updateById(
-                id,
-                newUsername,
-                newFirstName,
-                newLastName,
-                newPhoneNumber
-        );
-
-        // Then
-        assertThat(updatedCount).isZero();
-    }
-
-    @Test
-    @DisplayName("Given id of user that exists, When updateById, Then returns one and updates user")
-    void GivenIdOfUserThatExists_WhenUpdateById_ThenReturnsOneAndUpdatesUser() {
-        // Given
-        User user = createNotPersistedUser();
-        User otherUser = createNotPersistedUser();
-
-        em.persist(otherUser);
-        em.persistAndFlush(user);
-
-        var id = user.getId();
-        var newUsername = "newusername";
-        var newFirstName = "NewFirstName";
-        var newLastName = "NewLastName";
-        var newPhoneNumber = "123456789";
-
-        // When
-        int updatedCount = underTest.updateById(
-                id,
-                newUsername,
-                newFirstName,
-                newLastName,
-                newPhoneNumber
-        );
-
-        // Then
-        assertThat(updatedCount).isOne();
-
-        var updatedUser = em.find(User.class, id);
-
-        assertThat(updatedUser).isNotNull();
-        assertThat(updatedUser)
-                .usingRecursiveComparison()
-                .isEqualTo(user);
-    }
-
-    @Test
     @DisplayName("Given id of user that not exists, When deleteUserById, Then returns zero")
     void GivenIdOfUserThatNotExists_WhenDeleteUserById_ThenReturnsZero() {
         // Given

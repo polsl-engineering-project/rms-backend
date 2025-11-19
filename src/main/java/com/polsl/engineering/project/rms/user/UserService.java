@@ -1,10 +1,9 @@
 package com.polsl.engineering.project.rms.user;
 
-import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParamsException;
-import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.common.exception.*;
 import com.polsl.engineering.project.rms.security.UserCredentials;
 import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
+import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.security.jwt.JwtSubjectExistenceByIdVerifier;
 import com.polsl.engineering.project.rms.user.exception.SettingAdminRoleIsNotAllowedException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
@@ -29,7 +28,7 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
 
     @Transactional
     UserResponse createUser(CreateUserRequest request) {
-        validateRole(request.role());
+        validateRole(request.role(), List.of());
 
         var username = request.username().trim();
         validateUsername(username);
@@ -67,25 +66,36 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     }
 
     @Transactional
-    void updateUser(String strId, UpdateUserRequest request) {
+    void updateUser(String strId, UpdateUserRequest request, UserPrincipal loggedInUser) {
         var id = toUUIDOrThrow(strId);
+        var user = findByIdOrElseThrow(id);
 
-        validateRole(request.role());
-
-        var username = request.username().trim();
-        validateUsername(username);
-
-        var updatedCount = repository.updateById(
-                id,
-                request.username().trim(),
-                request.firstName().trim(),
-                request.lastName().trim(),
-                request.phoneNumber().trim()
-        );
-
-        if (updatedCount == 0) {
-            throw new ResourceNotFoundException("User with id " + strId + " not found");
+        if (request.role() == Role.ADMIN) {
+            throw new ForbiddenActionException("Setting admin role is not allowed");
         }
+        if (user.getRole() == Role.ADMIN) {
+            throw new ForbiddenActionException("Modifying admin user is not allowed");
+        }
+        if (user.getRole() == Role.MANAGER && !loggedInUser.isAdmin()) {
+            throw new ForbiddenActionException("Only admin can modify managers");
+        }
+        if (request.role() == Role.MANAGER && !loggedInUser.isAdmin()) {
+            throw new ForbiddenActionException("Only admin can assign manager role");
+        }
+
+        user.setFirstName(request.firstName().trim());
+        user.setLastName(request.lastName().trim());
+        user.setPhoneNumber(request.phoneNumber().trim());
+
+        user.setRole(request.role());
+
+        if (user.getRole() != Role.MANAGER || loggedInUser.isAdmin()) {
+            var username = request.username().trim();
+            validateUsername(id, username);
+            user.setUsername(username);
+        }
+
+        repository.save(user);
     }
 
     @Transactional
@@ -103,9 +113,19 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
                 .map(user -> new UserCredentials(user.getId(), user.getPassword(),List.of(user.getRole().toUserPrincipalRole())));
     }
 
-    private void validateRole(Role role) {
+    private void validateRole(Role role, List<Role> loggedInUserRoles) {
         if (role == Role.ADMIN) {
             throw new SettingAdminRoleIsNotAllowedException();
+        }
+        if (!loggedInUserRoles.contains(Role.ADMIN) && role == Role.MANAGER) {
+            throw new ForbiddenActionException("Setting MANAGER role is not allowed for non-admin users");
+        }
+    }
+
+    private void validateUsername(UUID id, String username) {
+        var found = repository.findByUsername(username.trim());
+        if (found.isPresent() && !found.get().getId().equals(id)) {
+            throw new NotUniqueUsernameException(username);
         }
     }
 
