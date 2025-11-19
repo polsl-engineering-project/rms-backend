@@ -5,6 +5,7 @@ import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.security.UserPrincipalAuthenticationToken;
 import com.polsl.engineering.project.rms.security.auth.dto.TokenPair;
+import com.polsl.engineering.project.rms.security.exception.JwtSubjectDoesNotExistException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -36,6 +37,7 @@ public class JwtService {
     private final SecureRandom secureRandom;
     private final MessageDigest messageDigest;
     private final UserCredentialsProvider credentialsProvider;
+    private final JwtSubjectExistenceByIdVerifier subjectExistenceByIdVerifier;
 
 
     public TokenPair createTokens(Authentication authentication, String username, String deviceInfo, String ipAddress) {
@@ -86,6 +88,11 @@ public class JwtService {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
+
+        // corrected logic: throw when subject does NOT exist
+        if (!subjectExistenceByIdVerifier.doesExist(id)) {
+            throw new JwtSubjectDoesNotExistException(id);
+        }
 
         return new UserPrincipal(UUID.fromString(id), authorities);
     }
