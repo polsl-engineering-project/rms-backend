@@ -383,7 +383,6 @@ class UserServiceTest {
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.findByUsername(request.username().trim())).thenReturn(Optional.of(existingUser));
 
         var principal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
 
@@ -424,7 +423,6 @@ class UserServiceTest {
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.findByUsername(request.username().trim())).thenReturn(Optional.of(existingUser));
 
         var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
 
@@ -717,6 +715,133 @@ class UserServiceTest {
         // When & Then
         assertThatThrownBy(() -> userService.createUser(request, principal))
                 .isInstanceOf(NotUniqueUsernameException.class);
+    }
+
+    @Test
+    @DisplayName("Manager modifying other manager should throw ForbiddenActionException")
+    void GivenManagerModifyingOtherManager_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var request = Instancio.create(UpdateUserRequest.class)
+                .toBuilder()
+                .role(Role.MANAGER)
+                .build();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var managerPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.updateUser(userIdStr, request, managerPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Manager changing own username should throw ForbiddenActionException")
+    void GivenManagerChangingOwnUsername_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        var request = UpdateUserRequest.builder()
+                .username(existingUser.getUsername() + "_new")
+                .firstName(existingUser.getFirstName())
+                .lastName(existingUser.getLastName())
+                .phoneNumber(existingUser.getPhoneNumber())
+                .role(existingUser.getRole())
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var managerPrincipal = new UserPrincipal(userId, List.of(UserPrincipal.Role.MANAGER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.updateUser(userIdStr, request, managerPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Manager changing own role should throw ForbiddenActionException")
+    void GivenManagerChangingOwnRole_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        var request = UpdateUserRequest.builder()
+                .username(existingUser.getUsername())
+                .firstName(existingUser.getFirstName())
+                .lastName(existingUser.getLastName())
+                .phoneNumber(existingUser.getPhoneNumber())
+                .role(Role.WAITER) // different than MANAGER
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var managerPrincipal = new UserPrincipal(userId, List.of(UserPrincipal.Role.MANAGER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.updateUser(userIdStr, request, managerPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Manager can modify waiter and change role to COOK")
+    void GivenManagerModifyingWaiter_ThenUpdatesUserAndChangesRoleToCook() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        var request = UpdateUserRequest.builder()
+                .username(existingUser.getUsername())
+                .firstName("Updated")
+                .lastName("User")
+                .phoneNumber(existingUser.getPhoneNumber())
+                .role(Role.COOK)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var managerPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
+
+        // When
+        userService.updateUser(userIdStr, request, managerPrincipal);
+
+        // Then
+        var expected = existingUser.toBuilder()
+                .username(request.username().trim())
+                .firstName(request.firstName().trim())
+                .lastName(request.lastName().trim())
+                .phoneNumber(request.phoneNumber().trim())
+                .role(request.role())
+                .build();
+
+        verify(userRepository).save(recursiveEq(expected, "createdAt","updatedAt"));
     }
 
 }
