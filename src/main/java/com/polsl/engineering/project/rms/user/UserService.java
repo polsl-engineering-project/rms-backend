@@ -74,29 +74,30 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
         var id = toUUIDOrThrow(strId);
         var user = findByIdOrElseThrow(id);
 
-        if (request.role() == Role.ADMIN) {
-            throw new ForbiddenActionException("Setting admin role is not allowed");
-        }
-        if (user.getRole() == Role.ADMIN) {
-            throw new ForbiddenActionException("Modifying admin user is not allowed");
-        }
-        if (user.getRole() == Role.MANAGER && !loggedInUser.isAdmin()) {
-            throw new ForbiddenActionException("Only admin can modify managers");
-        }
-        if (request.role() == Role.MANAGER && !loggedInUser.isAdmin()) {
-            throw new ForbiddenActionException("Only admin can assign manager role");
+        // basic checks delegated to helpers to reduce cognitive complexity
+        assertTargetNotAdmin(user);
+        assertRequestNotAssignAdmin(request);
+
+        boolean isAdmin = loggedInUser != null && loggedInUser.isAdmin();
+
+        // only admin may modify manager accounts
+        assertNonAdminCannotModifyManager(user, isAdmin);
+
+        assertManagerAssignmentAllowed(request, isAdmin);
+        assertManagerPermissions(request, user, loggedInUser);
+
+        var newUsername = request.username().trim();
+        if (!newUsername.equals(user.getUsername())) {
+            validateUsername(user.getId(), newUsername);
+            user.setUsername(newUsername);
         }
 
         user.setFirstName(request.firstName().trim());
         user.setLastName(request.lastName().trim());
         user.setPhoneNumber(request.phoneNumber().trim());
 
-        user.setRole(request.role());
-
-        if (user.getRole() != Role.MANAGER || loggedInUser.isAdmin()) {
-            var username = request.username().trim();
-            validateUsername(id, username);
-            user.setUsername(username);
+        if (request.role() != user.getRole()) {
+            user.setRole(request.role());
         }
 
         repository.save(user);
@@ -150,5 +151,51 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     @Override
     public boolean doesExist(String id) {
         return repository.findById(toUUIDOrThrow(id)).isPresent();
+    }
+
+    private void assertTargetNotAdmin(User user) {
+        if (user.getRole() == Role.ADMIN) {
+            throw new ForbiddenActionException("Modifying admin user is not allowed");
+        }
+    }
+
+    private void assertRequestNotAssignAdmin(UpdateUserRequest request) {
+        if (request.role() == Role.ADMIN) {
+            throw new ForbiddenActionException("Assigning admin role is not allowed");
+        }
+    }
+
+    private void assertManagerAssignmentAllowed(UpdateUserRequest request, boolean isAdmin) {
+        if (request.role() == Role.MANAGER && !isAdmin) {
+            throw new ForbiddenActionException("Only admin can assign manager role");
+        }
+    }
+
+    private void assertNonAdminCannotModifyManager(User user, boolean isAdmin) {
+        if (user.getRole() == Role.MANAGER && !isAdmin) {
+            throw new ForbiddenActionException("Only admin can modify managers");
+        }
+    }
+
+    private void assertManagerPermissions(UpdateUserRequest request, User targetUser, UserPrincipal loggedInUser) {
+        if (loggedInUser == null) return;
+
+        boolean isManager = loggedInUser.roles().contains(UserPrincipal.Role.MANAGER);
+        if (!isManager) return;
+
+        var loggedId = loggedInUser.id();
+
+        if (!loggedId.equals(targetUser.getId()) && targetUser.getRole() == Role.MANAGER) {
+            throw new ForbiddenActionException("Manager cannot modify other managers");
+        }
+
+        if (loggedId.equals(targetUser.getId())) {
+            if (!request.username().trim().equals(targetUser.getUsername())) {
+                throw new ForbiddenActionException("Manager cannot change own username");
+            }
+            if (request.role() != targetUser.getRole()) {
+                throw new ForbiddenActionException("Manager cannot change own role");
+            }
+        }
     }
 }
