@@ -60,6 +60,9 @@ public class SecurityConfig {
 
                         // Keep existing restrictions for menu/users
                         .requestMatchers("/api/v1/menu/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
+
+                        .requestMatchers("/api/v1/users/*/change-password").authenticated()
+                        .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
 
                         // fallback - authenticated
