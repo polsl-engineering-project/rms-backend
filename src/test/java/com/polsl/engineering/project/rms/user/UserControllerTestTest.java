@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +61,10 @@ class UserControllerTestTest {
                 .phoneNumber("123456789")
                 .role(Role.WAITER)
                 .build();
+    }
+
+    private static ChangePasswordRequest validChangePasswordRequest() {
+        return new ChangePasswordRequest("validPass1");
     }
 
     private static String repeat(char c, int times) {
@@ -109,14 +114,22 @@ class UserControllerTestTest {
                   "phoneNumber": "%s",
                   "role": "%s"
                 }
-                """
-        ).formatted(
+                """).formatted(
                 valueOrNullToken(req.username()),
                 valueOrNullToken(req.firstName()),
                 valueOrNullToken(req.lastName()),
                 valueOrNullToken(req.phoneNumber()),
                 req.role() == null ? NULL_TOKEN : req.role().name()
         );
+        return json.replace("\"" + NULL_TOKEN + "\"", "null");
+    }
+
+    private static String changePasswordRequestJson(ChangePasswordRequest req) {
+        var json = ("""
+                {
+                  "password": "%s"
+                }
+                """).formatted(valueOrNullToken(req.password()));
         return json.replace("\"" + NULL_TOKEN + "\"", "null");
     }
 
@@ -188,6 +201,13 @@ class UserControllerTestTest {
                     // role
                     Arguments.of("role null", update.toBuilder().role(null).build())
             );
+        } else if (base instanceof ChangePasswordRequest) {
+            return Stream.of(
+                    Arguments.of("password null", new ChangePasswordRequest(null)),
+                    Arguments.of("password blank", new ChangePasswordRequest("   ")),
+                    Arguments.of("password too short", new ChangePasswordRequest(tooShort(UserConstraints.PASSWORD_MIN_LENGTH, 'p'))),
+                    Arguments.of("password too long", new ChangePasswordRequest(tooLong(UserConstraints.PASSWORD_MAX_LENGTH, 'p')))
+            );
         }
         throw new IllegalArgumentException("Unsupported request type: " + base.getClass());
     }
@@ -201,6 +221,15 @@ class UserControllerTestTest {
     static Stream<UpdateUserRequest> invalidUpdateUserRequests() {
         var base = validUpdateUserRequest();
         return invalidRequestsFor(base).map(args -> (UpdateUserRequest) args.get()[1]);
+    }
+
+    static Stream<ChangePasswordRequest> invalidChangePasswordRequests() {
+        return Stream.of(
+                new ChangePasswordRequest(null),
+                new ChangePasswordRequest("   "),
+                new ChangePasswordRequest(tooShort(UserConstraints.PASSWORD_MIN_LENGTH, 'p')),
+                new ChangePasswordRequest(tooLong(UserConstraints.PASSWORD_MAX_LENGTH, 'p'))
+        );
     }
 
     // --- Tests ---
@@ -264,6 +293,24 @@ class UserControllerTestTest {
         verify(userService, times(1)).deleteUser(eq(id.toString()), isNull());
     }
 
+    @DisplayName("Given valid ChangePasswordRequest_When PATCH /api/v1/users/{id}/change-password_Then 204 No Content")
+    @Test
+    void GivenValidChangePasswordRequest_WhenPatchChangePassword_Then204() throws Exception {
+        // arrange
+        var id = UUID.randomUUID();
+        var request = validChangePasswordRequest();
+
+        doNothing().when(userService).changePassword(eq(id.toString()), eq(request), isNull());
+
+        // act & assert
+        mockMvc.perform(patch("/api/v1/users/" + id + "/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(changePasswordRequestJson(request)))
+                .andExpect(status().isNoContent());
+
+        verify(userService, times(1)).changePassword(eq(id.toString()), eq(request), isNull());
+    }
+
     @ParameterizedTest(name = "Given invalid CreateUserRequest - When POST /api/v1/users - Then 400 status code")
     @MethodSource("invalidCreateUserRequests")
     void GivenInvalidCreateUserRequest_WhenPostUsers_Then400(CreateUserRequest invalidRequest) throws Exception {
@@ -284,6 +331,19 @@ class UserControllerTestTest {
         mockMvc.perform(put("/api/v1/users/{id}", anyValidId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateUserRequestJson(invalidRequest)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @ParameterizedTest(name = "Given invalid ChangePasswordRequest - When PATCH /api/v1/users/<id>/change-password - Then 400 status code")
+    @MethodSource("invalidChangePasswordRequests")
+    void GivenInvalidChangePasswordRequest_WhenPatchChangePassword_Then400(ChangePasswordRequest invalidRequest) throws Exception {
+        var anyValidId = UUID.randomUUID().toString();
+
+        mockMvc.perform(patch("/api/v1/users/{id}/change-password", anyValidId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(changePasswordRequestJson(invalidRequest)))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(userService);

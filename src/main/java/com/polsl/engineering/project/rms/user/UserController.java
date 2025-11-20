@@ -79,6 +79,7 @@ class UserController {
     ) {
         return ResponseEntity.ok(userService.findAll(page, size));
     }
+
     @Operation(summary = "Get authenticated user details")
     @ApiResponse(responseCode = "200", description = "Users retrieved successfully")
     @ApiResponse(responseCode = "400", description = "Invalid pagination parameters",
@@ -97,6 +98,22 @@ class UserController {
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteUser(@PathVariable("id") String id, @AuthenticationPrincipal UserPrincipal userPrincipal) {
         userService.deleteUser(id, userPrincipal);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Change user password")
+    @ApiResponse(responseCode = "204", description = "User deleted successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "User not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @PatchMapping("/{id}/change-password")
+    ResponseEntity<Void> changePassword(
+            @PathVariable("id") String id,
+            @RequestBody @Valid ChangePasswordRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        userService.changePassword(id, request, userPrincipal);
         return ResponseEntity.noContent().build();
     }
 
@@ -186,5 +203,15 @@ record UpdateUserRequest(
 
         @NotNull(message = "must not be null")
         Role role
+) {
+}
+
+record ChangePasswordRequest(
+        @NotNullAndTrimmedLengthInRange(
+                min = PASSWORD_MIN_LENGTH,
+                max = PASSWORD_MAX_LENGTH,
+                message = "must not be null and must have trimmed length between {min} and {max} characters"
+        )
+        String password
 ) {
 }

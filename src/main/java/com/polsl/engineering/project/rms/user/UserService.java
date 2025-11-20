@@ -78,7 +78,7 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
         assertTargetNotAdmin(user);
         assertRequestNotAssignAdmin(request);
 
-        boolean isAdmin = loggedInUser != null && loggedInUser.isAdmin();
+        var isAdmin = loggedInUser != null && loggedInUser.isAdmin();
 
         // only admin may modify manager accounts
         assertNonAdminCannotModifyManager(user, isAdmin);
@@ -116,6 +116,65 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
         }
 
         repository.delete(user);
+    }
+
+    /*
+    1. Admin's password cannot be changed
+    2. Managers can change their own password
+    3. Non-admins cannot change passwords of other managers
+    4. Admin can change anyone's password except admins including himself
+    5. Managers can change passwords of non-manager, non-admin users
+    6. Cooks drivers and waiters can change only their own passwords
+     */
+    @Transactional
+    void changePassword(String strId, ChangePasswordRequest request, UserPrincipal loggedInUser) {
+        var id = toUUIDOrThrow(strId);
+        var user = findByIdOrElseThrow(id);
+        var newPassword = request.password().trim();
+
+        // logic checks
+        if (loggedInUser == null) {
+            throw new ForbiddenActionException("Authentication required to change password");
+        }
+
+        var targetRole = user.getRole();
+        var targetIsAdmin = targetRole == Role.ADMIN;
+        var targetIsManager = targetRole == Role.MANAGER;
+
+        var actorIsAdmin = loggedInUser.isAdmin();
+        var actorIsManager = loggedInUser.roles().contains(UserPrincipal.Role.MANAGER);
+
+        var actorId = loggedInUser.id();
+        var actorIsTarget = actorId.equals(user.getId());
+
+        // 1. Admin's password cannot be changed
+        if (targetIsAdmin) {
+            throw new ForbiddenActionException("Changing admin password is not allowed");
+        }
+
+        // If actor is not admin, evaluate further restrictions. Admins are allowed (except admins target which is already blocked).
+        if (!actorIsAdmin) {
+            if (actorIsManager) {
+                // 2. Managers can change their own password
+                // 5. Managers can change passwords of non-manager, non-admin users
+                if (!actorIsTarget && targetIsManager) {
+                    // manager trying to change other manager
+                    throw new ForbiddenActionException("Manager cannot change password of another manager");
+                }
+                // manager can change own password or other non-manager non-admin users -> allowed
+            } else {
+                // Non-admin, non-manager (cook/driver/waiter)
+                // 3 & 6: Non-admins cannot change passwords of other managers; cooks/drivers/waiters can change only their own
+                if (!actorIsTarget) {
+                    throw new ForbiddenActionException("Only admins or the user themselves can change this password");
+                }
+            }
+        }
+
+        var newPasswordEncoded = passwordEncoder.encode(newPassword);
+        user.setPassword(newPasswordEncoded);
+
+        repository.save(user);
     }
 
     @Override
@@ -180,7 +239,7 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
     private void assertManagerPermissions(UpdateUserRequest request, User targetUser, UserPrincipal loggedInUser) {
         if (loggedInUser == null) return;
 
-        boolean isManager = loggedInUser.roles().contains(UserPrincipal.Role.MANAGER);
+        var isManager = loggedInUser.roles().contains(UserPrincipal.Role.MANAGER);
         if (!isManager) return;
 
         var loggedId = loggedInUser.id();
