@@ -10,6 +10,7 @@ import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -842,6 +843,188 @@ class UserServiceTest {
                 .build();
 
         verify(userRepository).save(recursiveEq(expected, "createdAt","updatedAt"));
+    }
+
+    @Test
+    @DisplayName("User changing own password should update saved encoded password")
+    void GivenUserChangingOwnPassword_WhenChangePassword_ThenPasswordIsUpdated() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+        var newPassword = "newSecret";
+        var encoded = "encodedNewSecret";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(passwordEncoder.encode(newPassword)).thenReturn(encoded);
+
+        var principal = new UserPrincipal(userId, List.of(UserPrincipal.Role.WAITER));
+
+        // When
+        userService.changePassword(userIdStr, new ChangePasswordRequest(newPassword), principal);
+
+        // Then
+        var captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        var saved = captor.getValue();
+        assertThat(saved.getPassword()).isEqualTo(encoded);
+    }
+
+    @Test
+    @DisplayName("Manager changing non-manager's password should update saved encoded password")
+    void GivenManagerChangingNonManager_WhenChangePassword_ThenPasswordIsUpdated() {
+        // Given
+        var userId = UUID.randomUUID();
+        var newPassword = "managerChanged";
+        var encoded = "encodedManagerChanged";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(passwordEncoder.encode(newPassword)).thenReturn(encoded);
+
+        var managerPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
+
+        // When
+        userService.changePassword(userId.toString(), new ChangePasswordRequest(newPassword), managerPrincipal);
+
+        // Then
+        var captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        var saved = captor.getValue();
+        assertThat(saved.getPassword()).isEqualTo(encoded);
+    }
+
+    @Test
+    @DisplayName("Manager changing another manager should throw ForbiddenActionException")
+    void GivenManagerChangingOtherManager_WhenChangePassword_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var newPassword = "nope";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var managerPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.MANAGER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.changePassword(userId.toString(), new ChangePasswordRequest(newPassword), managerPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Non-admin changing other user's password should throw ForbiddenActionException")
+    void GivenNonAdminChangingOtherUser_WhenChangePassword_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var newPassword = "badAttempt";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var otherPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.changePassword(userId.toString(), new ChangePasswordRequest(newPassword), otherPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Admin changing manager's password should update saved encoded password")
+    void GivenAdminChangingManager_WhenChangePassword_ThenPasswordIsUpdated() {
+        // Given
+        var userId = UUID.randomUUID();
+        var newPassword = "adminChanged";
+        var encoded = "encodedAdminChanged";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.MANAGER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(passwordEncoder.encode(newPassword)).thenReturn(encoded);
+
+        var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
+        // When
+        userService.changePassword(userId.toString(), new ChangePasswordRequest(newPassword), adminPrincipal);
+
+        // Then
+        var captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        var saved = captor.getValue();
+        assertThat(saved.getPassword()).isEqualTo(encoded);
+    }
+
+    @Test
+    @DisplayName("Changing ADMIN user's password should throw ForbiddenActionException")
+    void GivenTargetIsAdmin_WhenChangePassword_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var newPassword = "whatever";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.ADMIN)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var adminPrincipal = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.ADMIN));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.changePassword(userId.toString(), new ChangePasswordRequest(newPassword), adminPrincipal))
+                .isInstanceOf(ForbiddenActionException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Null principal should throw ForbiddenActionException")
+    void GivenNullPrincipal_WhenChangePassword_ThenThrowForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var newPassword = "x";
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.changePassword(userId.toString(), new ChangePasswordRequest(newPassword), null))
+                .isInstanceOf(ForbiddenActionException.class);
+
+        verify(userRepository, never()).save(any());
     }
 
 }
