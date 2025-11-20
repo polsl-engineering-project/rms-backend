@@ -6,6 +6,7 @@ import com.polsl.engineering.project.rms.security.jwt.JwtProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -58,9 +59,11 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/bills/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_WAITER)
 
-                        // Keep existing restrictions for menu/users
+                        // Menu
+                        .requestMatchers(HttpMethod.GET, "/api/v1/menu/**").permitAll()
                         .requestMatchers("/api/v1/menu/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
 
+                        // Users
                         .requestMatchers("/api/v1/users/*/change-password").authenticated()
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
