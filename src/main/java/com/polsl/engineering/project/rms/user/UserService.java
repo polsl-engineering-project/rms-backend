@@ -115,6 +115,10 @@ class UserService implements UserCredentialsProvider, JwtSubjectExistenceByIdVer
             throw new ForbiddenActionException("Only admin can delete managers");
         }
 
+        if (loggedInUser.id().equals(user.getId())) {
+            throw new ForbiddenActionException("User cannot delete themselves");
+        }
+
         repository.delete(user);
     }
 

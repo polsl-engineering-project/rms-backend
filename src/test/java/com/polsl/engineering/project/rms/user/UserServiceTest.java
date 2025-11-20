@@ -1027,4 +1027,28 @@ class UserServiceTest {
         verify(userRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Deleting own account should throw ForbiddenActionException")
+    void GivenUserDeletingSelf_WhenDeleteUser_ThenThrowsForbiddenActionException() {
+        // Given
+        var userId = UUID.randomUUID();
+        var userIdStr = userId.toString();
+
+        var existingUser = Instancio.create(User.class)
+                .toBuilder()
+                .id(userId)
+                .role(Role.WAITER)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
+        var principal = new UserPrincipal(userId, List.of(UserPrincipal.Role.WAITER));
+
+        // When & Then
+        assertThatThrownBy(() -> userService.deleteUser(userIdStr, principal))
+                .isInstanceOf(ForbiddenActionException.class);
+
+        verify(userRepository, never()).delete(any());
+    }
+
 }
