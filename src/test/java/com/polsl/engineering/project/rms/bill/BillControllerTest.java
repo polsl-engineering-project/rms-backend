@@ -45,11 +45,6 @@ class BillControllerTest {
     @DisplayName("Given valid search request, When POST /api/v1/bills, Then 200 and response")
     void GivenValidSearchRequest_WhenPostSearchBills_Then200AndResponse() throws Exception {
         // given
-        var request = BillPayloads.BillSearchRequest.builder()
-                .statuses(List.of(BillStatus.OPEN))
-                .tableNumbers(List.of(5))
-                .build();
-
         var billSummary = new BillPayloads.BillSummaryResponse(
                 UUID.randomUUID(), 5, BillStatus.OPEN, UUID.randomUUID().toString(), new BigDecimal("50.00"),
                 2, null, null, null
@@ -61,9 +56,10 @@ class BillControllerTest {
         when(billService.searchBills(any())).thenReturn(expectedResponse);
 
         // when
-        var result = mockMvc.perform(post("/api/v1/bills")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+        var result = mockMvc.perform(get("/api/v1/bills")
+                        .queryParam("statuses", "OPEN")
+                        .queryParam("tableNumbers", "5")
+                        .accept(MediaType.APPLICATION_JSON));
 
         // then
         result.andExpect(status().isOk())

@@ -1,5 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
+import com.polsl.engineering.project.rms.bill.vo.BillStatus;
 import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -7,10 +8,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 @Tag(name = "Bill actions", description = "Operations related to bill management")
 @RestController
@@ -25,8 +33,39 @@ class BillController {
             content = @Content(schema = @Schema(implementation = BillPayloads.BillPageResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid input data",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @PostMapping
-    ResponseEntity<BillPayloads.BillPageResponse> searchBills(@RequestBody BillPayloads.BillSearchRequest request) {
+    @GetMapping
+    ResponseEntity<BillPayloads.BillPageResponse> searchBills(
+            @RequestParam(name = "statuses", required = false) List<BillStatus> statuses,
+            @RequestParam(name = "openedFrom", required = false) Instant openedFrom,
+            @RequestParam(name = "openedTo", required = false) Instant openedTo,
+            @RequestParam(name = "closedFrom", required = false) Instant closedFrom,
+            @RequestParam(name = "closedTo", required = false) Instant closedTo,
+            @RequestParam(name = "userId", required = false) String userId,
+            @RequestParam(name = "tableNumbers", required = false) List<Integer> tableNumbers,
+            @RequestParam(name = "minTotalAmount", required = false) BigDecimal minTotalAmount,
+            @RequestParam(name = "maxTotalAmount", required = false) BigDecimal maxTotalAmount,
+            @RequestParam(name = "menuItemId", required = false) String menuItemId,
+            @RequestParam(name = "sortBy", required = false) BillPayloads.BillSortField sortBy,
+            @RequestParam(name = "sortDirection", required = false) BillPayloads.SortDirection sortDirection,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size
+    ) {
+        var request = BillPayloads.BillSearchRequest.builder()
+                .statuses(statuses)
+                .openedFrom(openedFrom)
+                .openedTo(openedTo)
+                .closedFrom(closedFrom)
+                .closedTo(closedTo)
+                .userId(userId)
+                .tableNumbers(tableNumbers)
+                .minTotalAmount(minTotalAmount)
+                .maxTotalAmount(maxTotalAmount)
+                .menuItemId(menuItemId)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .page(page)
+                .size(size)
+                .build();
         var response = billService.searchBills(request);
         return ResponseEntity.ok(response);
     }
@@ -36,7 +75,7 @@ class BillController {
             content = @Content(schema = @Schema(implementation = BillPayloads.BillSummaryResponse.class)))
     @ApiResponse(responseCode = "404", description = "Bill not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     ResponseEntity<BillPayloads.BillSummaryWithLinesResponse> searchBill(@PathVariable("id") String id) {
         var response = billService.searchBill(id);
         return ResponseEntity.ok(response);
