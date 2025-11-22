@@ -48,13 +48,20 @@ public class SecurityConfig {
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui*/**", "/v3/api-docs*/**").permitAll()
 
-                        // Orders - anonymous only (placing orders)
-                        .requestMatchers("/api/v1/orders/place-pick-up-order", "/api/v1/orders/place-delivery-order").anonymous()
-
-                        // Orders - role based
-                        .requestMatchers("/api/v1/orders/*/approve/front-desk", "/api/v1/orders/*/start-delivery", "/api/v1/orders/*/complete", "/api/v1/orders/*/cancel", "/api/v1/orders/*/change-lines").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_WAITER)
+                        // Orders
+                        .requestMatchers(
+                                "/api/v1/orders/place-pick-up-order",
+                                "/api/v1/orders/place-delivery-order",
+                                "/api/v1/orders/**/customer-view"
+                        ).anonymous()
+                        .requestMatchers(
+                                "/api/v1/orders/*/approve/front-desk",
+                                "/api/v1/orders/*/start-delivery",
+                                "/api/v1/orders/*/complete",
+                                "/api/v1/orders/*/cancel",
+                                "/api/v1/orders/*/change-lines"
+                        ).hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_WAITER)
                         .requestMatchers("/api/v1/orders/*/approve/kitchen").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_COOK)
-                        // Mark as ready - any authenticated user
                         .requestMatchers("/api/v1/orders/*/ready").authenticated()
 
                         .requestMatchers("/api/v1/bills/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER, ROLE_WAITER)
