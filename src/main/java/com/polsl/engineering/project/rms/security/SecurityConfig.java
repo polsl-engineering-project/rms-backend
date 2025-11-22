@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/orders/place-pick-up-order",
                                 "/api/v1/orders/place-delivery-order",
-                                "/api/v1/orders/**/customer-view"
+                                "/api/v1/orders/*/customer-view"
                         ).anonymous()
                         .requestMatchers(
                                 "/api/v1/orders/*/approve/front-desk",
