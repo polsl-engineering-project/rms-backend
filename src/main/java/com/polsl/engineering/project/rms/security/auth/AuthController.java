@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.security.auth;
 
-import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.security.auth.dto.LoginRequest;
 import com.polsl.engineering.project.rms.security.auth.dto.LoginResponse;

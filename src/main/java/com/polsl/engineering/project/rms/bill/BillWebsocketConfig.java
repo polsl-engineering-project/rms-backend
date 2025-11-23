@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
-import com.polsl.engineering.project.rms.common.config.WebsocketConfig;
+import com.polsl.engineering.project.rms.general.config.WebsocketConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;

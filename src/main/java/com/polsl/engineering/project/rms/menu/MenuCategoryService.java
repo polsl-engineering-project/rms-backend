@@ -1,5 +1,5 @@
 package com.polsl.engineering.project.rms.menu;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.exception.NotUniqueMenuNameException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

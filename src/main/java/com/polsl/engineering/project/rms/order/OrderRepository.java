@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import com.polsl.engineering.project.rms.common.db.QueryLogging;
+import com.polsl.engineering.project.rms.general.db.QueryLogging;
 
 @RequiredArgsConstructor
 @Slf4j

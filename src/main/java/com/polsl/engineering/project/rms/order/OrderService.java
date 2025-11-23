@@ -1,7 +1,7 @@
 package com.polsl.engineering.project.rms.order;
 
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
-import com.polsl.engineering.project.rms.common.result.Result;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException;
 import com.polsl.engineering.project.rms.order.exception.MenuItemNotFoundException;

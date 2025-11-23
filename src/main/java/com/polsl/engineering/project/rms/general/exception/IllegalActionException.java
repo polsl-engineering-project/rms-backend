@@ -1,4 +1,4 @@
-package com.polsl.engineering.project.rms.common.exception;
+package com.polsl.engineering.project.rms.general.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

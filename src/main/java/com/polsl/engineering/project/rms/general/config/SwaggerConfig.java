@@ -1,4 +1,4 @@
-package com.polsl.engineering.project.rms.common.config;
+package com.polsl.engineering.project.rms.general.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.menu;
 
-import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
+import com.polsl.engineering.project.rms.general.exception.InvalidUUIDFormatException;
 import com.polsl.engineering.project.rms.menu.exception.UuidCorruptionException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

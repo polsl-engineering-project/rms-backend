@@ -4,7 +4,7 @@ import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 

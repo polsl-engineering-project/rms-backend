@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.user;
 
-import com.polsl.engineering.project.rms.common.exception.*;
+import com.polsl.engineering.project.rms.general.exception.*;
 import com.polsl.engineering.project.rms.security.UserCredentials;
 import com.polsl.engineering.project.rms.security.UserCredentialsProvider;
 import com.polsl.engineering.project.rms.security.UserPrincipal;

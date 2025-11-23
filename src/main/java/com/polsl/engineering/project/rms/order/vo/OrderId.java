@@ -2,7 +2,7 @@ package com.polsl.engineering.project.rms.order.vo;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
+import com.polsl.engineering.project.rms.general.exception.InvalidUUIDFormatException;
 
 import java.io.Serializable;
 import java.util.UUID;

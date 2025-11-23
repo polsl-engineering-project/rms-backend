@@ -1,16 +1,13 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
-import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

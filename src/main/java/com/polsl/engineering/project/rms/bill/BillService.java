@@ -6,8 +6,8 @@ import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionExcepti
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
 import com.polsl.engineering.project.rms.bill.vo.*;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
-import com.polsl.engineering.project.rms.common.result.Result;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

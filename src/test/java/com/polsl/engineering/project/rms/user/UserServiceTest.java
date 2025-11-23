@@ -1,9 +1,9 @@
 package com.polsl.engineering.project.rms.user;
 
-import com.polsl.engineering.project.rms.common.exception.ForbiddenActionException;
-import com.polsl.engineering.project.rms.common.exception.InvalidPaginationParamsException;
-import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.exception.ForbiddenActionException;
+import com.polsl.engineering.project.rms.general.exception.InvalidPaginationParamsException;
+import com.polsl.engineering.project.rms.general.exception.InvalidUUIDFormatException;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.user.exception.NotUniqueUsernameException;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import org.instancio.Instancio;
