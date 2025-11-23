@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.security;
 
-import com.polsl.engineering.project.rms.common.exception.IllegalActionException;
+import com.polsl.engineering.project.rms.general.exception.IllegalActionException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 

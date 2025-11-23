@@ -1,7 +1,7 @@
 package com.polsl.engineering.project.rms.menu;
 
-import com.polsl.engineering.project.rms.common.exception.InvalidUUIDFormatException;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.exception.InvalidUUIDFormatException;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

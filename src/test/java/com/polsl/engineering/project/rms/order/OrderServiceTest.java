@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.order;
 
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
@@ -136,7 +136,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
         // stub emitted events and id so outbox call can be verified
         var eventMock = mock(OrderEvent.class);
         when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
@@ -175,7 +175,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.failure("not allowed"));
+        when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("not allowed"));
 
         //when / then
         assertThatThrownBy(() -> underTest.approveByFrontDesk(orderId))
@@ -193,7 +193,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.changeOrderLines(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        when(orderMock.changeOrderLines(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
         // stub emitted events and id for outbox verification
         var eventMock = mock(OrderEvent.class);
         when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
@@ -219,7 +219,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
         var eventMock = mock(OrderEvent.class);
         when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
         when(orderMock.getId()).thenReturn(OrderId.generate());
@@ -261,7 +261,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.failure("not allowed"));
+        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("not allowed"));
 
         var user = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
 

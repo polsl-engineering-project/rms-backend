@@ -1,7 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.*;
-import com.polsl.engineering.project.rms.common.db.QueryLogging;
+import com.polsl.engineering.project.rms.general.db.QueryLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;

@@ -1,4 +1,4 @@
-package com.polsl.engineering.project.rms.common.db;
+package com.polsl.engineering.project.rms.general.db;
 
 import org.slf4j.Logger;
 

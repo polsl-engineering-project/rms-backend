@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.user;
 
-import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import com.polsl.engineering.project.rms.validation.constraint.NotNullAndTrimmedLengthInRange;
 import io.swagger.v3.oas.annotations.Operation;

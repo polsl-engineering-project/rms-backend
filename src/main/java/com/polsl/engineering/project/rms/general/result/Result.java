@@ -1,4 +1,4 @@
-package com.polsl.engineering.project.rms.common.result;
+package com.polsl.engineering.project.rms.general.result;
 
 import java.util.function.Function;
 

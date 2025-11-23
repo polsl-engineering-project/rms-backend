@@ -1,4 +1,4 @@
-package com.polsl.engineering.project.rms.common.error_handler;
+package com.polsl.engineering.project.rms.general.error_handler;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

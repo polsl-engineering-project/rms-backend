@@ -1,4 +1,4 @@
-package com.polsl.engineering.project.rms.common.config;
+package com.polsl.engineering.project.rms.general.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

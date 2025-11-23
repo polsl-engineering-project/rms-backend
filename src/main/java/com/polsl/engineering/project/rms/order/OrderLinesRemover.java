@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.order;
 
-import com.polsl.engineering.project.rms.common.result.Result;
+import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.order.vo.OrderLine;
 import com.polsl.engineering.project.rms.order.vo.OrderLineRemoval;
 import lombok.AccessLevel;

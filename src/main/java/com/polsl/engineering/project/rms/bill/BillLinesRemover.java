@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
-import com.polsl.engineering.project.rms.common.result.Result;
+import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.bill.vo.BillLine;
 import com.polsl.engineering.project.rms.bill.vo.BillLineRemoval;
 import lombok.AccessLevel;

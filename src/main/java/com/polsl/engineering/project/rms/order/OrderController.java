@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.order;
 
-import com.polsl.engineering.project.rms.common.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

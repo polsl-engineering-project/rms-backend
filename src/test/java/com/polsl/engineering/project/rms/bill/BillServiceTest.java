@@ -6,7 +6,7 @@ import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionExcepti
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
 import com.polsl.engineering.project.rms.bill.vo.*;
-import com.polsl.engineering.project.rms.common.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import org.junit.jupiter.api.DisplayName;
@@ -155,7 +155,7 @@ class BillServiceTest {
         var billId = UUID.randomUUID().toString();
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.addItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        when(billMock.addItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
         var eventMock = mock(BillEvent.class);
         when(billMock.pullEvents()).thenReturn(List.of(eventMock));
         when(billMock.getId()).thenReturn(BillId.generate());
@@ -203,7 +203,7 @@ class BillServiceTest {
         var billId = UUID.randomUUID().toString();
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.addItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.failure("cannot add"));
+        when(billMock.addItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("cannot add"));
 
         var menuItemId = UUID.randomUUID();
         var payloadLine = new BillPayloads.BillLine(menuItemId, 1, 0L);
@@ -228,7 +228,7 @@ class BillServiceTest {
         var billId = UUID.randomUUID().toString();
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.removeItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        when(billMock.removeItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
         var eventMock = mock(BillEvent.class);
         when(billMock.pullEvents()).thenReturn(List.of(eventMock));
         when(billMock.getId()).thenReturn(BillId.generate());
@@ -273,7 +273,7 @@ class BillServiceTest {
         var billId = UUID.randomUUID().toString();
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.close(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.ok(null));
+        when(billMock.close(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
         var eventMock = mock(BillEvent.class);
         when(billMock.pullEvents()).thenReturn(List.of(eventMock));
         when(billMock.getId()).thenReturn(BillId.generate());
@@ -310,7 +310,7 @@ class BillServiceTest {
         var billId = UUID.randomUUID().toString();
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
-        when(billMock.close(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.common.result.Result.failure("cannot close"));
+        when(billMock.close(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("cannot close"));
 
         // when / then
         assertThatThrownBy(() -> underTest.closeBill(billId))
