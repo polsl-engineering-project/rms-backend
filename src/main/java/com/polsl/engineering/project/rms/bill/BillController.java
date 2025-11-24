@@ -69,7 +69,7 @@ class BillController {
 
     @Operation(summary = "Search bill by id")
     @ApiResponse(responseCode = "200", description = "Bill retrieved successfully",
-            content = @Content(schema = @Schema(implementation = BillPayloads.BillSummaryResponse.class)))
+            content = @Content(schema = @Schema(implementation = BillPayloads.BillSummaryWithLinesResponse.class)))
     @ApiResponse(responseCode = "404", description = "Bill not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("/{id}")
