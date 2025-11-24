@@ -91,7 +91,8 @@ class BillService {
                                 menuItemId,
                                 line.quantity(),
                                 line.menuItemName(),
-                                line.menuItemVersion()
+                                line.menuItemVersion(),
+                                line.unitPrice().amount()
                         );
                     })
                     .toList();
@@ -117,7 +118,8 @@ class BillService {
                             menuItemId,
                             line.quantity(),
                             line.menuItemName(),
-                            line.menuItemVersion()
+                            line.menuItemVersion(),
+                            line.unitPrice().amount()
                     );
                 })
                 .toList();

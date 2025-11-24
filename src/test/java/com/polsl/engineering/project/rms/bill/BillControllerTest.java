@@ -75,7 +75,7 @@ class BillControllerTest {
     void GivenExistingBillId_WhenGetBillById_Then200AndBillDetails() throws Exception {
         // given
         var billId = UUID.randomUUID();
-        var billLineResponse = new BillPayloads.BillLineResponse(UUID.randomUUID(), 2, "Pizza", 1L);
+        var billLineResponse = new BillPayloads.BillLineResponse(UUID.randomUUID(), 2, "Pizza", 1L, new BigDecimal("60.00"));
         var expectedResponse = new BillPayloads.BillSummaryWithLinesResponse(
                 billId, 7, BillStatus.OPEN,UUID.randomUUID().toString(), new BigDecimal("60.00"),
                 List.of(billLineResponse), null, null, null
@@ -91,7 +91,8 @@ class BillControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(billId.toString()))
                 .andExpect(jsonPath("$.tableNumber").value(7))
-                .andExpect(jsonPath("$.billLines[0].quantity").value(2));
+                .andExpect(jsonPath("$.billLines[0].quantity").value(2))
+                .andExpect(jsonPath("$.billLines[0].unitPrice").value(60.00));
 
         verify(billService).searchBill(billId.toString());
     }
