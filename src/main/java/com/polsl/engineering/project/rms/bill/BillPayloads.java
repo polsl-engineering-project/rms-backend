@@ -111,7 +111,8 @@ public class BillPayloads {
             UUID menuItemId,
             int quantity,
             String name,
-            long version
+            long version,
+            BigDecimal unitPrice
     ){
     }
 
