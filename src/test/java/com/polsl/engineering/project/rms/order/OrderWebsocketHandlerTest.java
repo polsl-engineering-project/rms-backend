@@ -12,7 +12,9 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -38,6 +40,7 @@ class OrderWebsocketHandlerTest {
     void GivenActiveOrders_WhenAfterConnectionEstablished_ThenSendInitialDataAndRegisterSession() throws Exception {
         //given
         WebSocketSession session = mock(WebSocketSession.class);
+        when(session.getAttributes()).thenReturn(Map.of("authenticated", true));
         when(orderService.getActiveOrders()).thenReturn(List.of());
         var realOm = new ObjectMapper();
         handler = new OrderWebsocketHandler(orderService, realOm, sessionRegistry);
@@ -57,6 +60,7 @@ class OrderWebsocketHandlerTest {
     void GivenOrderServiceThrows_WhenAfterConnectionEstablished_ThenCloseSessionAndRegisterSession() throws Exception {
         //given
         WebSocketSession session = mock(WebSocketSession.class);
+        when(session.getAttributes()).thenReturn(Map.of("authenticated", true));
         when(orderService.getActiveOrders()).thenThrow(new RuntimeException("boom"));
         var realOm = new ObjectMapper();
         handler = new OrderWebsocketHandler(orderService, realOm, sessionRegistry);
@@ -82,6 +86,46 @@ class OrderWebsocketHandlerTest {
 
         //then
         verify(sessionRegistry).unregisterSession(session);
+    }
+
+    @Test
+    @DisplayName("GivenUnauthenticatedSession_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister")
+    void GivenUnauthenticatedSession_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        Map<String, Object> attributes = Map.of("authenticated", false);
+        when(session.getAttributes()).thenReturn(attributes);
+        var realOm = new ObjectMapper();
+        handler = new OrderWebsocketHandler(orderService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        verify(session, never()).sendMessage(any());
+        verify(session).close(CloseStatus.SERVER_ERROR);
+        verify(sessionRegistry, never()).registerSession(session);
+        verify(orderService, never()).getActiveOrders();
+    }
+
+    @Test
+    @DisplayName("GivenSessionWithoutAuthAttribute_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister")
+    void GivenSessionWithoutAuthAttribute_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        Map<String, Object> attributes = Collections.emptyMap();
+        when(session.getAttributes()).thenReturn(attributes);
+        var realOm = new ObjectMapper();
+        handler = new OrderWebsocketHandler(orderService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        verify(session, never()).sendMessage(any());
+        verify(session).close(CloseStatus.SERVER_ERROR);
+        verify(sessionRegistry, never()).registerSession(session);
+        verify(orderService, never()).getActiveOrders();
     }
 
 }
