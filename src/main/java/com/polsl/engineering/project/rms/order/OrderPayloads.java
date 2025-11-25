@@ -59,6 +59,11 @@ public class OrderPayloads {
     ) {
     }
 
+    public record  ApproveOrderRequest(
+            @PositiveOrZero Integer estimatedPreparationMinutes
+    ) {
+    }
+
     public record RemoveLine(
             @NotNull UUID menuItemId,
             @Min(1) int quantity

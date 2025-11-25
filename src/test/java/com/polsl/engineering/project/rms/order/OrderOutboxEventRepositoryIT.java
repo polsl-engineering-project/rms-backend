@@ -28,9 +28,9 @@ class OrderOutboxEventRepositoryIT extends ContainersEnvironment {
     @DisplayName("Given unprocessed and processed events_When findByProcessedIsFalse_Then returns only unprocessed slice")
     void GivenUnprocessedAndProcessedEvents_WhenFindByProcessedIsFalse_ThenReturnsOnlyUnprocessedSlice() {
         // given
-        var e1 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED_BY_FRONT_DESK, "p1");
-        var e2 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED_BY_FRONT_DESK, "p2");
-        var e3 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED_BY_FRONT_DESK, "p3");
+        var e1 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED, "p1");
+        var e2 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED, "p2");
+        var e3 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED, "p3");
         // mark one as processed using package setter
         e3.setProcessed(true);
 
@@ -51,9 +51,9 @@ class OrderOutboxEventRepositoryIT extends ContainersEnvironment {
     @Transactional
     void GivenSomeProcessedEvents_WhenDeleteByProcessedIsTrue_ThenProcessedEventsAreDeleted() {
         // given
-        var e1 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED_BY_FRONT_DESK, "a");
-        var e2 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED_BY_FRONT_DESK, "b");
-        var e3 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED_BY_FRONT_DESK, "c");
+        var e1 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED, "a");
+        var e2 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED, "b");
+        var e3 = OrderOutboxEvent.of(OrderId.generate(), OrderEventType.APPROVED, "c");
         e2.setProcessed(true);
         e3.setProcessed(true);
 

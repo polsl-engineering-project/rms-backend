@@ -1,8 +1,10 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
+import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
+import com.polsl.engineering.project.rms.order.cmd.ApproveOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
 import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
@@ -129,63 +131,6 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Given existing order_When approveByFrontDesk_Then updates repository")
-    void GivenExistingOrder_WhenApproveByFrontDesk_ThenUpdatesRepository() {
-        //given
-        var id = UUID.randomUUID();
-        var orderId = id.toString();
-        var orderMock = mock(Order.class);
-        when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
-        // stub emitted events and id so outbox call can be verified
-        var eventMock = mock(OrderEvent.class);
-        when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
-        when(orderMock.getId()).thenReturn(OrderId.generate());
-
-        //when
-        underTest.approveByFrontDesk(orderId);
-
-        //then
-        verify(jdbcRepository).updateWithoutLines(orderMock);
-        verify(outboxService).persistEvent(any(), any());
-    }
-
-    @Test
-    @DisplayName("Given order not found_When approveByFrontDesk_Then throws ResourceNotFoundException")
-    void GivenOrderNotFound_WhenApproveByFrontDesk_ThenThrowsResourceNotFoundException() {
-        //given
-        var id = UUID.randomUUID();
-        var orderId = id.toString();
-        when(jdbcRepository.findById(any())).thenReturn(Optional.empty());
-
-        //when / then
-        assertThatThrownBy(() -> underTest.approveByFrontDesk(orderId))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining(orderId);
-
-        verify(jdbcRepository, never()).updateWithoutLines(any());
-        verify(outboxService, never()).persistEvent(any(), any());
-    }
-
-    @Test
-    @DisplayName("Given failing aggregate_When approveByFrontDesk_Then throws InvalidOrderActionException")
-    void GivenFailingAggregate_WhenApproveByFrontDesk_ThenThrowsInvalidOrderActionException() {
-        //given
-        var id = UUID.randomUUID();
-        var orderId = id.toString();
-        var orderMock = mock(Order.class);
-        when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.approveByFrontDesk(any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("not allowed"));
-
-        //when / then
-        assertThatThrownBy(() -> underTest.approveByFrontDesk(orderId))
-                .isInstanceOf(com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException.class);
-
-        verify(jdbcRepository, never()).updateWithoutLines(orderMock);
-        verify(outboxService, never()).persistEvent(any(), any());
-    }
-
-    @Test
     @DisplayName("Given removable lines_When changeOrderLines_Then updates repository with lines")
     void GivenRemovableLines_WhenChangeOrderLines_ThenUpdatesRepositoryWithLines() {
         //given
@@ -193,7 +138,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.changeOrderLines(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
+        when(orderMock.changeOrderLines(any(), any(Clock.class))).thenReturn(Result.ok(null));
         // stub emitted events and id for outbox verification
         var eventMock = mock(OrderEvent.class);
         when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
@@ -219,7 +164,7 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.ok(null));
+        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(Result.ok(null));
         var eventMock = mock(OrderEvent.class);
         when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
         when(orderMock.getId()).thenReturn(OrderId.generate());
@@ -261,12 +206,77 @@ class OrderServiceTest {
         var orderId = id.toString();
         var orderMock = mock(Order.class);
         when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
-        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("not allowed"));
+        when(orderMock.complete(any(UserPrincipal.class), any(Clock.class))).thenReturn(Result.failure("not allowed"));
 
         var user = new UserPrincipal(UUID.randomUUID(), List.of(UserPrincipal.Role.WAITER));
 
         // when / then
         assertThatThrownBy(() -> underTest.completeOrder(orderId, user))
+                .isInstanceOf(com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException.class);
+
+        verify(jdbcRepository, never()).updateWithoutLines(orderMock);
+        verify(outboxService, never()).persistEvent(any(), any());
+    }
+
+    // New tests for approve
+    @Test
+    @DisplayName("Given existing order_When approve_Then updates repository and persists events")
+    void GivenExistingOrder_WhenApprove_ThenUpdatesRepoAndPersistsEvents() {
+        // given
+        var id = UUID.randomUUID();
+        var orderId = id.toString();
+        var orderMock = mock(Order.class);
+        when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
+        when(mapper.toCommand(any(OrderPayloads.ApproveOrderRequest.class))).thenReturn(new ApproveOrderCommand(15));
+        when(orderMock.approve(any(ApproveOrderCommand.class), any(Clock.class))).thenReturn(Result.ok(null));
+        var eventMock = mock(OrderEvent.class);
+        when(orderMock.pullEvents()).thenReturn(List.of(eventMock));
+        when(orderMock.getId()).thenReturn(OrderId.generate());
+
+        var request = new OrderPayloads.ApproveOrderRequest(15);
+
+        // when
+        underTest.approve(orderId, request);
+
+        // then
+        verify(jdbcRepository).updateWithoutLines(orderMock);
+        verify(outboxService).persistEvent(any(), any());
+    }
+
+    @Test
+    @DisplayName("Given order not found_When approve_Then throws ResourceNotFoundException")
+    void GivenOrderNotFound_WhenApprove_ThenThrowsResourceNotFoundException() {
+        // given
+        var id = UUID.randomUUID();
+        var orderId = id.toString();
+        when(jdbcRepository.findById(any())).thenReturn(Optional.empty());
+
+        var request = new OrderPayloads.ApproveOrderRequest(10);
+
+        // when / then
+        assertThatThrownBy(() -> underTest.approve(orderId, request))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(orderId);
+
+        verify(jdbcRepository, never()).updateWithoutLines(any());
+        verify(outboxService, never()).persistEvent(any(), any());
+    }
+
+    @Test
+    @DisplayName("Given failing aggregate_When approve_Then throws InvalidOrderActionException")
+    void GivenFailingAggregate_WhenApprove_ThenThrowsInvalidOrderActionException() {
+        // given
+        var id = UUID.randomUUID();
+        var orderId = id.toString();
+        var orderMock = mock(Order.class);
+        when(jdbcRepository.findById(any())).thenReturn(Optional.of(orderMock));
+        when(mapper.toCommand(any(OrderPayloads.ApproveOrderRequest.class))).thenReturn(new ApproveOrderCommand(null));
+        when(orderMock.approve(any(ApproveOrderCommand.class), any(Clock.class))).thenReturn(Result.failure("not allowed"));
+
+        var request = new OrderPayloads.ApproveOrderRequest(null);
+
+        // when / then
+        assertThatThrownBy(() -> underTest.approve(orderId, request))
                 .isInstanceOf(com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException.class);
 
         verify(jdbcRepository, never()).updateWithoutLines(orderMock);

@@ -2,8 +2,7 @@ package com.polsl.engineering.project.rms.order.event;
 
 public enum OrderEventType {
     DELIVERY_ORDER_PLACED,
-    APPROVED_BY_FRONT_DESK,
-    APPROVED_BY_KITCHEN,
+    APPROVED,
     CANCELLED,
     COMPLETED,
     DELIVERY_STARTED,

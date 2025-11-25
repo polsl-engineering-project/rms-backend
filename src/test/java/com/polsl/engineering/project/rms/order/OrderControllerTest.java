@@ -103,35 +103,21 @@ class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("Given existing order_When POST /api/v1/orders/{id}/approve/front-desk_Then 204 No Content")
-    void GivenExistingOrder_WhenPostApproveByFrontDesk_Then204() throws Exception {
+    @DisplayName("Given existing order_When POST /api/v1/orders/{id}/approve_Then 204 No Content")
+    void GivenExistingOrder_WhenPostApprove_Then204() throws Exception {
         // given
         var id = UUID.randomUUID().toString();
+        var req = new OrderPayloads.ApproveOrderRequest(15);
 
         // when
-        var result = mockMvc.perform(post("/api/v1/orders/" + id + "/approve/front-desk"));
-
-        // then
-        result.andExpect(status().isNoContent());
-        verify(orderService).approveByFrontDesk(id);
-    }
-
-    @Test
-    @DisplayName("Given existing order_When POST /api/v1/orders/{id}/approve/kitchen_Then 204 No Content")
-    void GivenExistingOrder_WhenPostApproveByKitchen_Then204() throws Exception {
-        // given
-        var id = UUID.randomUUID().toString();
-        var req = new OrderPayloads.ApproveOrderByKitchenRequest(15);
-
-        // when
-        var result = mockMvc.perform(post("/api/v1/orders/" + id + "/approve/kitchen")
+        var result = mockMvc.perform(post("/api/v1/orders/" + id + "/approve")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)));
 
         // then
         result.andExpect(status().isNoContent());
-        ArgumentCaptor<OrderPayloads.ApproveOrderByKitchenRequest> captor = ArgumentCaptor.forClass(OrderPayloads.ApproveOrderByKitchenRequest.class);
-        verify(orderService).approveByKitchen(eq(id), captor.capture());
+        ArgumentCaptor<OrderPayloads.ApproveOrderRequest> captor = ArgumentCaptor.forClass(OrderPayloads.ApproveOrderRequest.class);
+        verify(orderService).approve(eq(id), captor.capture());
         assertThat(captor.getValue().estimatedPreparationMinutes()).isEqualTo(15);
     }
 

@@ -21,7 +21,7 @@ interface OrderMapper {
     PlacePickUpOrderCommand toCommand(OrderPayloads.PlacePickUpOrderRequest request, List<OrderLine> orderLines);
 
     @Mapping(target = "estimatedPreparationMinutes", source = "estimatedPreparationMinutes")
-    ApproveOrderByKitchenCommand toCommand(OrderPayloads.ApproveOrderByKitchenRequest request);
+    ApproveOrderCommand toCommand(OrderPayloads.ApproveOrderRequest request);
 
     CancelOrderCommand toCommand(OrderPayloads.CancelOrderRequest request);
 

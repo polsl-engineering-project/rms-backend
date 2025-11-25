@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.order;
 
-import com.polsl.engineering.project.rms.order.cmd.ApproveOrderByKitchenCommand;
+import com.polsl.engineering.project.rms.order.cmd.ApproveOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.ChangeOrderLinesCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlaceDeliveryOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
@@ -32,8 +32,7 @@ class OrderChangeOrderLinesTest {
         var placed = Order.placePickUpOrder(cmd, FIXED_CLOCK);
         assertThat(placed.isSuccess()).isTrue();
         var order = placed.getValue();
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         return order;
     }
@@ -49,8 +48,7 @@ class OrderChangeOrderLinesTest {
         var placed = Order.placeDeliveryOrder(cmd, FIXED_CLOCK);
         assertThat(placed.isSuccess()).isTrue();
         var order = placed.getValue();
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         return order;
     }

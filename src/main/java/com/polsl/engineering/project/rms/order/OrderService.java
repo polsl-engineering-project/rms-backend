@@ -61,19 +61,10 @@ class OrderService {
     }
 
     @Transactional
-    void approveByFrontDesk(String orderId) {
-        var order = findByIdOrThrow(orderId);
-        var result = order.approveByFrontDesk(clock);
-        validateActionResult(result);
-        jdbcRepository.updateWithoutLines(order);
-        saveEvents(order);
-    }
-
-    @Transactional
-    void approveByKitchen(String orderId, OrderPayloads.ApproveOrderByKitchenRequest request) {
-        var order = findByIdOrThrow(orderId);
+    void approve(String id, OrderPayloads.ApproveOrderRequest request) {
+        var order = findByIdOrThrow(id);
         var cmd = mapper.toCommand(request);
-        var result = order.approveByKitchen(cmd, clock);
+        var result = order.approve(cmd, clock);
         validateActionResult(result);
         jdbcRepository.updateWithoutLines(order);
         saveEvents(order);

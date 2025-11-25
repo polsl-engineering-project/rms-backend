@@ -48,28 +48,18 @@ class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Approve order by front desk")
-    @ApiResponse(responseCode = "204", description = "Order approved successfully")
-    @ApiResponse(responseCode = "404", description = "Order not found",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @PostMapping("/{id}/approve/front-desk")
-    ResponseEntity<Void> approveByFrontDesk(@PathVariable("id") String id) {
-        orderService.approveByFrontDesk(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @Operation(summary = "Approve order by kitchen")
+    @Operation(summary = "Approve order")
     @ApiResponse(responseCode = "204", description = "Order approved successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input data",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "404", description = "Order not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @PostMapping("/{id}/approve/kitchen")
-    ResponseEntity<Void> approveByKitchen(
+    @PostMapping("/{id}/approve")
+    ResponseEntity<Void> approve(
             @PathVariable("id") String id,
-            @Valid @RequestBody OrderPayloads.ApproveOrderByKitchenRequest request
+            @Valid @RequestBody OrderPayloads.ApproveOrderRequest request
     ) {
-        orderService.approveByKitchen(id, request);
+        orderService.approve(id, request);
         return ResponseEntity.noContent().build();
     }
 

@@ -1,6 +1,6 @@
 package com.polsl.engineering.project.rms.order;
 
-import com.polsl.engineering.project.rms.order.cmd.ApproveOrderByKitchenCommand;
+import com.polsl.engineering.project.rms.order.cmd.ApproveOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlaceDeliveryOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
 import com.polsl.engineering.project.rms.order.vo.*;
@@ -20,8 +20,8 @@ class OrderOtherMethodsTest {
 
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2025-01-01T12:00:00Z"), ZoneOffset.UTC);
 
-    private static OrderLine line(String id, int qty, String price, long version) {
-        return new OrderLine(id, qty, new Money(new BigDecimal(price)), version);
+    private static OrderLine line(String id, String price) {
+        return new OrderLine(id, 1, new Money(new BigDecimal(price)), 1);
     }
 
     private static Order placePickup(List<OrderLine> initialLines) {
@@ -62,15 +62,13 @@ class OrderOtherMethodsTest {
     @DisplayName("Given pickup order - when approve flow - then status CONFIRMED")
     void GivenPickupOrder_WhenApproveFlow_ThenConfirmed() {
         // given
-        var order = placePickup(List.of(line("pizza", 1, "30.00", 1)));
+        var order = placePickup(List.of(line("pizza", "30.00")));
 
         // when
-        var frontDeskResult = order.approveByFrontDesk(FIXED_CLOCK);
-        var kitchenResult = order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK);
+        var result = order.approve(new ApproveOrderCommand(null), FIXED_CLOCK);
 
         // then
-        assertThat(frontDeskResult.isSuccess()).isTrue();
-        assertThat(kitchenResult.isSuccess()).isTrue();
+        assertThat(result.isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
     }
 
@@ -78,15 +76,13 @@ class OrderOtherMethodsTest {
     @DisplayName("Given delivery order - when approve flow - then status CONFIRMED")
     void GivenDeliveryOrder_WhenApproveFlow_ThenConfirmed() {
         // given
-        var order = placeDelivery(List.of(line("pizza", 1, "30.00", 1)));
+        var order = placeDelivery(List.of(line("pizza", "30.00")));
 
         // when
-        var frontDeskResult = order.approveByFrontDesk(FIXED_CLOCK);
-        var kitchenResult = order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK);
+        var result = order.approve(new ApproveOrderCommand(null), FIXED_CLOCK);
 
         // then
-        assertThat(frontDeskResult.isSuccess()).isTrue();
-        assertThat(kitchenResult.isSuccess()).isTrue();
+        assertThat(result.isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
     }
 
@@ -94,9 +90,8 @@ class OrderOtherMethodsTest {
     @DisplayName("Given pickup order - when mark as ready and complete - then READY_FOR_PICKUP and COMPLETED")
     void GivenPickupOrder_WhenMarkReadyAndComplete_ThenReadyAndCompleted() {
         // given
-        var order = placePickup(List.of(line("cake", 1, "15.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placePickup(List.of(line("cake", "15.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
 
         // when
         var markReadyResult = order.markAsReady(FIXED_CLOCK);
@@ -117,9 +112,8 @@ class OrderOtherMethodsTest {
     @DisplayName("Given delivery order - when mark as ready and start delivery - then READY_FOR_DRIVER and IN_DELIVERY")
     void GivenDeliveryOrder_WhenMarkReadyAndStartDelivery_ThenReadyAndInDelivery() {
         // given
-        var order = placeDelivery(List.of(line("wrap", 1, "18.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placeDelivery(List.of(line("wrap", "18.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
 
         // when
         var markReadyResult = order.markAsReady(FIXED_CLOCK);
@@ -140,9 +134,8 @@ class OrderOtherMethodsTest {
     @DisplayName("Given confirmed order - when cancel - then CANCELLED")
     void GivenConfirmedOrder_WhenCancel_ThenCancelled() {
         // given
-        var order = placePickup(List.of(line("soda", 1, "5.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placePickup(List.of(line("soda", "5.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
 
         // when
         var cancelResult = order.cancel(new com.polsl.engineering.project.rms.order.cmd.CancelOrderCommand("client request"), FIXED_CLOCK);
@@ -156,7 +149,7 @@ class OrderOtherMethodsTest {
     @DisplayName("GivenNewOrder_WhenNotFinished_ThenIsFinishedFalse")
     void GivenNewOrder_WhenNotFinished_ThenIsFinishedFalse() {
         //given
-        var order = placePickup(List.of(line("burger", 1, "12.00", 1)));
+        var order = placePickup(List.of(line("burger", "12.00")));
 
         //when
         var finished = order.isFinished();
@@ -169,9 +162,8 @@ class OrderOtherMethodsTest {
     @DisplayName("GivenCompletedOrder_WhenComplete_ThenIsFinishedTrue")
     void GivenCompletedOrder_WhenComplete_ThenIsFinishedTrue() {
         //given
-        var order = placePickup(List.of(line("cake", 1, "15.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placePickup(List.of(line("cake", "15.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
 
         //when
@@ -186,9 +178,8 @@ class OrderOtherMethodsTest {
     @DisplayName("GivenConfirmedOrder_WhenCancel_ThenIsFinishedTrue")
     void GivenConfirmedOrder_WhenCancel_ThenIsFinishedTrue() {
         //given
-        var order = placePickup(List.of(line("soda", 1, "5.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placePickup(List.of(line("soda", "5.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
 
         //when
         var cancelResult = order.cancel(new com.polsl.engineering.project.rms.order.cmd.CancelOrderCommand("client request"), FIXED_CLOCK);
@@ -202,9 +193,8 @@ class OrderOtherMethodsTest {
     @DisplayName("Given delivery order, When driver completes in delivery, Then COMPLETED")
     void GivenDeliveryOrder_WhenDriverCompletes_ThenCompleted() {
         // given
-        var order = placeDelivery(List.of(line("pizza", 1, "30.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placeDelivery(List.of(line("pizza", "30.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.startDelivery(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_DELIVERY);
@@ -221,9 +211,8 @@ class OrderOtherMethodsTest {
     @DisplayName("Given delivery order ready for driver, When driver attempts to complete early, Then failure")
     void GivenDeliveryOrderReadyForDriver_WhenDriverAttemptsCompleteEarly_ThenFailure() {
         // given
-        var order = placeDelivery(List.of(line("pasta", 1, "20.00", 1)));
-        assertThat(order.approveByFrontDesk(FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.approveByKitchen(new ApproveOrderByKitchenCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
+        var order = placeDelivery(List.of(line("pasta", "20.00")));
+        assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_DRIVER);
 

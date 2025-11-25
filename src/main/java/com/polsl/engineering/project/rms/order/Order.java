@@ -205,23 +205,9 @@ class Order {
     }
 
     // ==== Behaviour API ====
-    Result<Void> approveByFrontDesk(Clock clock) {
+    Result<Void> approve(ApproveOrderCommand cmd, Clock clock) {
         if (status != OrderStatus.PENDING_APPROVAL) {
             return Result.failure("Only orders with status PENDING_APPROVAL can be approved by staff.");
-        }
-
-        status = OrderStatus.APPROVED_BY_FRONT_DESK;
-        updatedAt = Instant.now(clock);
-
-        // emit event
-        events.add(new OrderApprovedByFrontDeskEvent(id, updatedAt));
-
-        return Result.ok(null);
-    }
-
-    Result<Void> approveByKitchen(ApproveOrderByKitchenCommand cmd, Clock clock) {
-        if (status != OrderStatus.APPROVED_BY_FRONT_DESK) {
-            return Result.failure("Only orders with status APPROVED_BY_FRONT_DESK can be approved by kitchen.");
         }
         if (deliveryMode == DeliveryMode.ASAP && (cmd.estimatedPreparationMinutes() == null || cmd.estimatedPreparationMinutes() <= 0)) {
             return Result.failure("Estimated preparation time must be provided and greater than 0 minutes for ASAP orders.");
@@ -233,7 +219,7 @@ class Order {
         updatedAt = Instant.now(clock);
 
         // emit event
-        events.add(new OrderApprovedByKitchenEvent(id, updatedAt, estimatedPreparationMinutes));
+        events.add(new OrderApprovedEvent(id, updatedAt, estimatedPreparationMinutes));
 
         return Result.ok(null);
     }
