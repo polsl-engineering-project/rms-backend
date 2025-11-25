@@ -22,6 +22,12 @@ class OrderWebsocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
+        Boolean authenticated = (Boolean) session.getAttributes().get("authenticated");
+        if (authenticated == null || !authenticated) {
+            log.warn("Unauthenticated Order WebSocket connection attempt");
+            session.close(CloseStatus.SERVER_ERROR);
+            return;
+        }
         sendInitialData(session);
         sessionRegistry.registerSession(session);
     }

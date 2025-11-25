@@ -75,6 +75,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers("/api/v1/users/**").hasAnyRole(ROLE_ADMIN, ROLE_MANAGER)
 
+                        // websockets
+                        // authorization occurs in beforeHandshake method, intercepting and validating queryParam
+                        .requestMatchers("/ws/**").permitAll()
+
                         // fallback - authenticated
                         .anyRequest().authenticated()
                  )
