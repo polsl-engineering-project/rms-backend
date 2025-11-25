@@ -1,8 +1,10 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.order.event.*;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -141,6 +143,31 @@ class OrderController {
     @GetMapping("/{id}/customer-view")
     ResponseEntity<OrderPayloads.OrderCustomerViewResponse> getOrderForCustomer(@PathVariable String id) {
         return ResponseEntity.ok(orderService.getOrderForCustomer(id));
+    }
+
+
+    @Operation(
+            summary = "WebSocket OrderEvent Documentation",
+            description = "Only for Event WebSocket schemas exposition"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "WebSocket OrderEvent schemas",
+            content = @Content(array = @ArraySchema(schema = @Schema(oneOf = {
+                    DeliveryOrderPlacedEvent.class,
+                    PickUpOrderPlacedEvent.class,
+                    OrderApprovedByFrontDeskEvent.class,
+                    OrderApprovedByKitchenEvent.class,
+                    OrderCancelledEvent.class,
+                    OrderCompletedEvent.class,
+                    OrderDeliveryStartedEvent.class,
+                    OrderLinesChangedEvent.class,
+                    OrderMarkedAsReadyEvent.class
+            }))
+    ))
+    @GetMapping("/docs/ws/order-events")
+    public void docs() {
+        // ignore
     }
 
 }
