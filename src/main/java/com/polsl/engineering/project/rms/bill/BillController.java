@@ -1,9 +1,6 @@
 package com.polsl.engineering.project.rms.bill;
 
-import com.polsl.engineering.project.rms.bill.event.BillAddLinesEvent;
-import com.polsl.engineering.project.rms.bill.event.BillClosedEvent;
-import com.polsl.engineering.project.rms.bill.event.BillOpenedEvent;
-import com.polsl.engineering.project.rms.bill.event.BillRemoveLinesEvent;
+import com.polsl.engineering.project.rms.bill.event.*;
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
 import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -150,7 +147,8 @@ class BillController {
                     BillOpenedEvent.class,
                     BillAddLinesEvent.class,
                     BillRemoveLinesEvent.class,
-                    BillClosedEvent.class
+                    BillClosedEvent.class,
+                    BillInitialDataEvent.class
             }))
             ))
     @GetMapping("/docs/ws/bill-events")

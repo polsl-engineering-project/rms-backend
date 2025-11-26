@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.cmd.OpenBillCommand;
+import com.polsl.engineering.project.rms.bill.event.BillInitialDataEvent;
 import com.polsl.engineering.project.rms.bill.vo.BillId;
 import com.polsl.engineering.project.rms.bill.vo.BillLine;
 import com.polsl.engineering.project.rms.bill.vo.TableNumber;
@@ -28,6 +29,13 @@ interface BillMapper {
     @Mapping(target = "totalAmount", expression = "java(bill.getTotalAmount() != null ? bill.getTotalAmount().amount() : null)")
     @Mapping(target = "billLines", source = "lines")
     BillPayloads.BillSummaryWithLinesResponse toSummaryWithLinesResponse(Bill bill, List<BillPayloads.BillLineResponse> lines);
+
+    @Mapping(target = "id", source = "bill.id.value")
+    @Mapping(target = "tableNumber", source = "bill.tableNumber.value")
+    @Mapping(target = "userId", expression = "java(bill.getUserId())")
+    @Mapping(target = "totalAmount", expression = "java(bill.getTotalAmount() != null ? bill.getTotalAmount().amount() : null)")
+    @Mapping(target = "billLines", source = "lines")
+    BillInitialDataEvent toInitialDataEvent(Bill bill, List<BillPayloads.BillLineResponse> lines);
 
     default UUID map(BillId value) {
         return value == null ? null : value.value();
