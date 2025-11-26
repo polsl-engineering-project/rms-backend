@@ -162,7 +162,8 @@ class OrderController {
                     OrderCompletedEvent.class,
                     OrderDeliveryStartedEvent.class,
                     OrderLinesChangedEvent.class,
-                    OrderMarkedAsReadyEvent.class
+                    OrderMarkedAsReadyEvent.class,
+                    OrderInitialDataEvent.class
             }))
     ))
     @GetMapping("/docs/ws/order-events")

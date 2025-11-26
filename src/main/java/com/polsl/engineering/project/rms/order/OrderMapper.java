@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.polsl.engineering.project.rms.order.cmd.*;
+import com.polsl.engineering.project.rms.order.event.OrderInitialDataEvent;
 import com.polsl.engineering.project.rms.order.vo.OrderLine;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -38,9 +39,10 @@ interface OrderMapper {
     @Mapping(target = "address", source = "deliveryAddress")
     @Mapping(target = "deliveryMode", source = "deliveryMode")
     @Mapping(target = "scheduledFor", source = "scheduledFor")
+    @Mapping(target = "placedAt", source = "placedAt")
     @Mapping(target = "orderLines", expression = "java(mapLines(order.getLines()))")
     @Mapping(target = "estimatedPreparationTimeMinutes", source = "estimatedPreparationMinutes")
-    OrderPayloads.OrderDetailsResponse toDetailsResponse(Order order);
+    OrderInitialDataEvent toInitialData(Order order);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "status", expression = "java(mapStatusToCustomerVisible(order.getStatus()))")

@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.polsl.engineering.project.rms.bill.event.BillEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -40,7 +41,7 @@ class BillWebsocketHandler extends TextWebSocketHandler {
     private void sendInitialData(WebSocketSession session) throws IOException {
         try {
             var message = new BillPayloads.BillWebsocketMessage(
-                    "INITIAL_DATA",
+                    BillEventType.INITIAL_DATA.toString(),
                     billService.getOpenBills()
             );
             var payload = om.writeValueAsString(message);

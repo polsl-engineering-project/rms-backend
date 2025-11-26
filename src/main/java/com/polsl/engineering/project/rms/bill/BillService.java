@@ -2,6 +2,7 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.cmd.AddItemsToBillCommand;
 import com.polsl.engineering.project.rms.bill.cmd.RemoveItemsFromBillCommand;
+import com.polsl.engineering.project.rms.bill.event.BillInitialDataEvent;
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
@@ -82,7 +83,7 @@ class BillService {
         billRepository.updateWithoutLines(bill);
     }
 
-    List<BillPayloads.BillSummaryWithLinesResponse> getOpenBills(){
+    List<BillInitialDataEvent> getOpenBills(){
         return billRepository.findOpenBills().stream().map(bill -> {
             var lines = bill.getLines().stream()
                     .map(line -> {
@@ -97,7 +98,7 @@ class BillService {
                     })
                     .toList();
 
-            return mapper.toSummaryWithLinesResponse(bill, lines);
+            return mapper.toInitialDataEvent(bill, lines);
         }).toList();
     }
 
