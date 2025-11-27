@@ -32,7 +32,7 @@ class OrderMapperTest {
         var address = new Address("Main St", "1", null, "City", "12-345");
         var request = new OrderPayloads.PlaceDeliveryOrderRequest(customer, address, DeliveryMode.ASAP, null, List.of());
 
-        var voLine = new OrderLine(UUID.randomUUID().toString(), 2, Money.zero(), 5L);
+        var voLine = new OrderLine(UUID.randomUUID().toString(), 2, Money.zero(), "name");
         var voLines = List.of(voLine);
 
         // when
@@ -51,7 +51,7 @@ class OrderMapperTest {
     void GivenOrderLineVO_WhenToPayloadOrderLine_ThenMapsCorrectly() {
         // given
         var uuid = UUID.randomUUID();
-        var voLine = new OrderLine(uuid.toString(), 3, Money.zero(), 7L);
+        var voLine = new OrderLine(uuid.toString(), 3, Money.zero(), "name");
 
         // when
         var payload = underTest.toPayloadOrderLine(voLine);
@@ -59,7 +59,7 @@ class OrderMapperTest {
         // then
         assertThat(payload.menuItemId()).isEqualTo(uuid);
         assertThat(payload.quantity()).isEqualTo(3);
-        assertThat(payload.version()).isEqualTo(7L);
+        assertThat(payload.menuItemName()).isEqualTo("name");
     }
 
     @Test
@@ -68,7 +68,7 @@ class OrderMapperTest {
         // given
         var id = OrderId.generate();
         var lineUuid = UUID.randomUUID().toString();
-        var lines = List.of(new OrderLine(lineUuid, 1, Money.zero(), 2L));
+        var lines = List.of(new OrderLine(lineUuid, 1, Money.zero(), "name"));
         var placedAt = Instant.now();
         var approvedAt = LocalDateTime.now().minusMinutes(5);
 
@@ -109,7 +109,7 @@ class OrderMapperTest {
         var mappedLine = details.orderLines().getFirst();
         assertThat(mappedLine.menuItemId()).isEqualTo(UUID.fromString(lineUuid));
         assertThat(mappedLine.quantity()).isEqualTo(1);
-        assertThat(mappedLine.version()).isEqualTo(2L);
+        assertThat(mappedLine.menuItemName()).isEqualTo("name");
     }
 
 }

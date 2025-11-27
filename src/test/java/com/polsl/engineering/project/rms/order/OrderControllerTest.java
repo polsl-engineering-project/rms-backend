@@ -44,7 +44,7 @@ class OrderControllerTest {
     void GivenValidPlacePickUpOrder_WhenPostPlacePickUpOrder_Then201AndBody() throws Exception {
         // given
         var menuItemId = UUID.randomUUID();
-        var line = new OrderPayloads.OrderLine(menuItemId, 2, 0L);
+        var line = new OrderPayloads.OrderLineRequest(menuItemId, 2);
         var customerInfo = new com.polsl.engineering.project.rms.order.vo.CustomerInfo("John","Doe","123456789");
         var req = new OrderPayloads.PlacePickUpOrderRequest(customerInfo, com.polsl.engineering.project.rms.order.vo.DeliveryMode.ASAP, LocalTime.now(), List.of(line));
         var expectedId = UUID.randomUUID();
@@ -75,7 +75,7 @@ class OrderControllerTest {
     void GivenValidPlaceDeliveryOrder_WhenPostPlaceDeliveryOrder_Then201AndBody() throws Exception {
         // given
         var menuItemId = UUID.randomUUID();
-        var line = new OrderPayloads.OrderLine(menuItemId, 1, 0L);
+        var line = new OrderPayloads.OrderLineRequest(menuItemId, 1);
         var customerInfo = new com.polsl.engineering.project.rms.order.vo.CustomerInfo("Jane","Roe","987654321");
         var address = new com.polsl.engineering.project.rms.order.vo.Address("Main St","1", null, "City","00-001");
         var req = new OrderPayloads.PlaceDeliveryOrderRequest(customerInfo, address, com.polsl.engineering.project.rms.order.vo.DeliveryMode.ASAP, LocalTime.now(), List.of(line));
@@ -187,7 +187,7 @@ class OrderControllerTest {
     void GivenExistingOrder_WhenPostChangeOrderLines_Then204() throws Exception {
         // given
         var id = UUID.randomUUID().toString();
-        var addLine = new OrderPayloads.OrderLine(UUID.randomUUID(), 1, 0L);
+        var addLine = new OrderPayloads.OrderLineRequest(UUID.randomUUID(), 1);
         var removeLine = new OrderPayloads.RemoveLine(UUID.randomUUID(), 1);
         var req = new OrderPayloads.ChangeOrderLinesRequest(List.of(addLine), List.of(removeLine), 5);
 

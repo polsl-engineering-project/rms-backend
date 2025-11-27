@@ -23,10 +23,16 @@ import lombok.Builder;
 
 public class OrderPayloads {
 
-    public record OrderLine(
+    public record OrderLineRequest(
             @NotNull UUID menuItemId,
-            @Min(1) int quantity,
-            @PositiveOrZero long version
+            @Min(1) int quantity
+    ) {
+    }
+
+    public record OrderLineResponse(
+            UUID menuItemId,
+            int quantity,
+            String menuItemName
     ) {
     }
 
@@ -35,7 +41,7 @@ public class OrderPayloads {
             @Valid @NotNull Address address,
             @NotNull DeliveryMode deliveryMode,
             LocalTime scheduledFor,
-            @NotEmpty @Valid List<OrderLine> orderLines
+            @NotEmpty @Valid List<OrderLineRequest> orderLines
     ) {
     }
 
@@ -43,7 +49,7 @@ public class OrderPayloads {
             @Valid @NotNull CustomerInfo customerInfo,
             @NotNull DeliveryMode deliveryMode,
             LocalTime scheduledFor,
-            @NotEmpty @Valid List<OrderLine> orderLines
+            @NotEmpty @Valid List<OrderLineRequest> orderLines
     ) {
     }
 
@@ -64,7 +70,7 @@ public class OrderPayloads {
     }
 
     public record ChangeOrderLinesRequest(
-            @Valid List<OrderLine> newLines,
+            @Valid List<OrderLineRequest> newLines,
             @Valid List<RemoveLine> removedLines,
             @PositiveOrZero Integer updatedEstimatedPreparationTimeMinutes
     ) {
@@ -82,7 +88,7 @@ public class OrderPayloads {
             Address address,
             DeliveryMode deliveryMode,
             LocalTime scheduledFor,
-            List<OrderLine> orderLines,
+            List<OrderLineResponse> orderLines,
             Integer estimatedPreparationTimeMinutes,
             LocalDateTime approvedAt,
             LocalDateTime deliveryStartedAt

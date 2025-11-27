@@ -401,7 +401,7 @@ class Order {
                         existingLine.menuItemId(),
                         remainingQuantity,
                         existingLine.unitPrice(),
-                        existingLine.menuItemVersion()
+                        existingLine.menuItemName()
                 );
                 result.add(updatedLine);
             }
@@ -420,7 +420,7 @@ class Order {
                         line.menuItemId(),
                         updatedQuantity,
                         line.unitPrice(),
-                        line.menuItemVersion()
+                        line.menuItemName()
                 );
                 groupedMap.put(line.menuItemId(), updatedLine);
             } else {

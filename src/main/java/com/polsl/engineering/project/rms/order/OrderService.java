@@ -5,7 +5,6 @@ import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException;
 import com.polsl.engineering.project.rms.order.exception.MenuItemNotFoundException;
-import com.polsl.engineering.project.rms.order.exception.MenuItemVersionMismatchException;
 import com.polsl.engineering.project.rms.order.vo.Money;
 import com.polsl.engineering.project.rms.order.vo.OrderId;
 import com.polsl.engineering.project.rms.order.vo.OrderLine;
@@ -178,11 +177,11 @@ class OrderService {
                 : size;
     }
 
-    private List<OrderLine> getOrderLines(List<OrderPayloads.OrderLine> linesFromRequest) {
+    private List<OrderLine> getOrderLines(List<OrderPayloads.OrderLineRequest> linesFromRequest) {
         var orderLines = new ArrayList<OrderLine>();
 
         var ids = linesFromRequest.stream()
-                .map(OrderPayloads.OrderLine::menuItemId)
+                .map(OrderPayloads.OrderLineRequest::menuItemId)
                 .toList();
 
         var snapshotsMap = menuApi.getSnapshotsForOrderByIds(ids);
@@ -192,15 +191,12 @@ class OrderService {
             if (snapshot == null) {
                 throw new MenuItemNotFoundException(lineFromRequest);
             }
-            if (snapshot.version() != lineFromRequest.version()) {
-                throw new MenuItemVersionMismatchException(snapshot.version(), lineFromRequest);
-            }
 
             var orderLine = new OrderLine(
                     lineFromRequest.menuItemId().toString(),
                     lineFromRequest.quantity(),
                     new Money(snapshot.price()),
-                    snapshot.version()
+                    snapshot.name()
             );
             orderLines.add(orderLine);
         }

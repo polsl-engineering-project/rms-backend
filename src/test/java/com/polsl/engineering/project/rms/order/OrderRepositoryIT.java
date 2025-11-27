@@ -108,7 +108,7 @@ class OrderRepositoryIT extends ContainersEnvironment {
     @DisplayName("Given new order_When saveNewOrder_Then row is persisted in orders and order_lines")
     void GivenNewOrder_WhenSaveNewOrder_ThenPersistedInDb() {
         // given
-        var lines = List.of(new OrderLine("soup", 2, new Money(new BigDecimal("5.00")), 1L));
+        var lines = List.of(new OrderLine("soup", 2, new Money(new BigDecimal("5.00")), "soup"));
         var customer = new CustomerInfo("Alice", "Smith", "111222333");
         var cmd = new com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand(customer, DeliveryMode.ASAP, null, lines);
 
@@ -247,8 +247,8 @@ class OrderRepositoryIT extends ContainersEnvironment {
 
         // new lines to replace existing ones
         var newLines = List.of(
-                new OrderLine("salad", 2, new Money(new BigDecimal("9.99")), 1L),
-                new OrderLine("soda", 3, new Money(new BigDecimal("2.50")), 1L)
+                new OrderLine("salad", 2, new Money(new BigDecimal("9.99")), "salad"),
+                new OrderLine("soda", 3, new Money(new BigDecimal("2.50")), "soda")
         );
 
         // when
@@ -295,8 +295,8 @@ class OrderRepositoryIT extends ContainersEnvironment {
         var a = optA.get();
         var b = optB.get();
 
-        var newLinesA = List.of(new OrderLine("pasta", 1, new Money(new BigDecimal("12.00")), 1L));
-        var newLinesB = List.of(new OrderLine("burger", 1, new Money(new BigDecimal("11.00")), 1L));
+        var newLinesA = List.of(new OrderLine("pasta", 1, new Money(new BigDecimal("12.00")), "pasta"));
+        var newLinesB = List.of(new OrderLine("burger", 1, new Money(new BigDecimal("11.00")), "burger"));
 
         var updatedA = Order.reconstruct(
                 a.getId(), a.getType(), a.getDeliveryMode(), OrderStatus.APPROVED, newLinesA,

@@ -33,9 +33,9 @@ CREATE TABLE order_lines (
     id UUID NOT NULL,
     order_id UUID NOT NULL,
     menu_item_id VARCHAR(200) NOT NULL,
+    menu_item_name VARCHAR(200) NOT NULL,
     quantity INTEGER NOT NULL,
     unit_price NUMERIC(12,2) NOT NULL,
-    menu_item_version BIGINT NOT NULL,
 
     CONSTRAINT pk_order_lines PRIMARY KEY (id),
     CONSTRAINT fk_order_lines_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,

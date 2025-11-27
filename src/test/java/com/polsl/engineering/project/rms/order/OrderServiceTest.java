@@ -6,6 +6,7 @@ import com.polsl.engineering.project.rms.menu.MenuApi;
 import com.polsl.engineering.project.rms.menu.dto.MenuItemSnapshotForOrder;
 import com.polsl.engineering.project.rms.order.cmd.ApproveOrderCommand;
 import com.polsl.engineering.project.rms.order.cmd.PlacePickUpOrderCommand;
+import com.polsl.engineering.project.rms.order.cmd.PlaceDeliveryOrderCommand;
 import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
 import com.polsl.engineering.project.rms.order.event.OrderEvent;
@@ -57,7 +58,7 @@ class OrderServiceTest {
     void GivenValidPickupRequest_WhenPlacePickUpOrder_ThenSavesAndReturnsResponse() {
         //given
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new OrderPayloads.OrderLine(payloadLineId, 2, 1L);
+        var payloadLine = new OrderPayloads.OrderLineRequest(payloadLineId, 2);
         var customer = new CustomerInfo("John", "Doe", "123");
         var request = new OrderPayloads.PlacePickUpOrderRequest(customer, DeliveryMode.ASAP, null, List.of(payloadLine));
 
@@ -93,7 +94,7 @@ class OrderServiceTest {
     void GivenMissingMenuItem_WhenPlacePickUpOrder_ThenThrowsMenuItemNotFoundException() {
         //given
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new OrderPayloads.OrderLine(payloadLineId, 1, 0L);
+        var payloadLine = new OrderPayloads.OrderLineRequest(payloadLineId, 1);
         var customer = new CustomerInfo("John", "Doe", "123");
         var request = new OrderPayloads.PlacePickUpOrderRequest(customer, DeliveryMode.ASAP, null, List.of(payloadLine));
 
@@ -113,7 +114,7 @@ class OrderServiceTest {
     void GivenVersionMismatch_WhenPlaceDeliveryOrder_ThenThrowsMenuItemVersionMismatchException() {
         //given
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new OrderPayloads.OrderLine(payloadLineId, 1, 5L); // request says version 5
+        var payloadLine = new OrderPayloads.OrderLineRequest(payloadLineId, 1); // request no longer includes version
         var customer = new CustomerInfo("John", "Doe", "123");
         var address = new com.polsl.engineering.project.rms.order.vo.Address("Street", "1", null, "City", "00-001");
         var request = new OrderPayloads.PlaceDeliveryOrderRequest(customer, address, DeliveryMode.ASAP, null, List.of(payloadLine));
@@ -122,12 +123,22 @@ class OrderServiceTest {
         var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("5.00"), "Dish", 1L);
         when(menuApi.getSnapshotsForOrderByIds(anyList())).thenReturn(Map.of(payloadLineId, snapshot));
 
-        //when / then
-        assertThatThrownBy(() -> underTest.placeDeliveryOrder(request))
-                .isInstanceOf(com.polsl.engineering.project.rms.order.exception.MenuItemVersionMismatchException.class);
+        // when: should place order successfully because version check was removed
+        // prepare mapper & repository as in other tests
+        when(mapper.toCommand(any(OrderPayloads.PlaceDeliveryOrderRequest.class), anyList()))
+                .thenAnswer(invocation -> new PlaceDeliveryOrderCommand(
+                        invocation.getArgument(0, OrderPayloads.PlaceDeliveryOrderRequest.class).customerInfo(),
+                        invocation.getArgument(0, OrderPayloads.PlaceDeliveryOrderRequest.class).address(),
+                        invocation.getArgument(0, OrderPayloads.PlaceDeliveryOrderRequest.class).deliveryMode(),
+                        invocation.getArgument(0, OrderPayloads.PlaceDeliveryOrderRequest.class).scheduledFor(),
+                        invocation.getArgument(1, List.class)
+                ));
+        when(mapper.toResponse(any(Order.class))).thenReturn(new OrderPayloads.OrderPlacedResponse(UUID.randomUUID()));
 
-        verify(jdbcRepository, never()).saveNewOrder(any());
-        verify(outboxService, never()).persistEvent(any(), any());
+        var response = underTest.placeDeliveryOrder(request);
+        assertThat(response).isNotNull();
+        verify(jdbcRepository).saveNewOrder(any());
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test

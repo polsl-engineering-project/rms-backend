@@ -8,7 +8,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class MenuItemNotFoundException extends RuntimeException {
     public static final String MSG_TEMPLATE = "Menu item not found: %s";
 
-    public MenuItemNotFoundException(OrderPayloads.OrderLine orderLine) {
+    public MenuItemNotFoundException(OrderPayloads.OrderLineRequest orderLine) {
         super(MSG_TEMPLATE.formatted(orderLine.menuItemId()));
+    }
+
+    public MenuItemNotFoundException(String menuItemId) {
+        super(MSG_TEMPLATE.formatted(menuItemId));
     }
 }

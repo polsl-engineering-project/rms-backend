@@ -68,11 +68,11 @@ interface OrderMapper {
 
     @Mapping(target = "menuItemId", expression = "java(java.util.UUID.fromString(line.menuItemId()))")
     @Mapping(target = "quantity", source = "quantity")
-    @Mapping(target = "version", source = "menuItemVersion")
-    OrderPayloads.OrderLine toPayloadOrderLine(OrderLine line);
+    @Mapping(target = "menuItemName", source = "menuItemName")
+    OrderPayloads.OrderLineResponse toPayloadOrderLine(OrderLine line);
 
     @SuppressWarnings("unused")
-    default List<OrderPayloads.OrderLine> mapLines(List<OrderLine> lines) {
+    default List<OrderPayloads.OrderLineResponse> mapLines(List<OrderLine> lines) {
         if (lines == null) return java.util.List.of();
         return lines.stream()
                 .map(this::toPayloadOrderLine)

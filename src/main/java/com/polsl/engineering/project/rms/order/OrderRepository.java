@@ -82,9 +82,9 @@ class OrderRepository {
                 id,
                 order_id,
                 menu_item_id,
+                menu_item_name,
                 quantity,
-                unit_price,
-                menu_item_version
+                unit_price
             ) VALUES (?, ?, ?, ?, ?, ?)
             """;
 
@@ -152,7 +152,7 @@ class OrderRepository {
         for (var line : lines) {
             var lineId = UUID.randomUUID();
             var unitPrice = line.unitPrice().amount();
-            batchArgs.add(new Object[]{lineId, orderId, line.menuItemId(), line.quantity(), unitPrice, line.menuItemVersion()});
+            batchArgs.add(new Object[]{lineId, orderId, line.menuItemId(), line.menuItemName(), line.quantity(), unitPrice});
         }
         var sample = batchArgs.size() > 3 ? batchArgs.subList(0, 3) : batchArgs;
         QueryLogging.logBatch(log, ORDER_LINES_INSERT_SQL, batchArgs.size(), sample);

@@ -21,7 +21,7 @@ class OrderOtherMethodsTest {
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2025-01-01T12:00:00Z"), ZoneOffset.UTC);
 
     private static OrderLine line(String id, String price) {
-        return new OrderLine(id, 1, new Money(new BigDecimal(price)), 1);
+        return new OrderLine(id, 1, new Money(new BigDecimal(price)), id);
     }
 
     private static Order placePickup(List<OrderLine> initialLines) {

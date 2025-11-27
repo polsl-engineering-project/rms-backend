@@ -53,8 +53,8 @@ class OrderChangeOrderLinesTest {
         return order;
     }
 
-    private static OrderLine line(String id, int qty, String price, long version) {
-        return new OrderLine(id, qty, new Money(new BigDecimal(price)), version);
+    private static OrderLine line(String id, int qty, String price) {
+        return new OrderLine(id, qty, new Money(new BigDecimal(price)), id);
     }
 
     private static OrderLineRemoval lineRemoval(String id, int qty) {
@@ -75,11 +75,11 @@ class OrderChangeOrderLinesTest {
     void GivenConfirmedOrder_WhenAddOnlyNewLines_ThenLinesAddedAndStatusUnchanged() {
         // given
         var order = createPickupOrderConfirmed(List.of(
-                line("pizza", 1, "30.00", 1)
+                line("pizza", 1, "30.00")
         ));
         var newLines = List.of(
-                line("pasta", 2, "25.50", 3),
-                line("salad", 1, "12.00", 2)
+                line("pasta", 2, "25.50"),
+                line("salad", 1, "12.00")
         );
         var cmd = new ChangeOrderLinesCommand(newLines, null, 10);
 
@@ -90,11 +90,11 @@ class OrderChangeOrderLinesTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(order.getEstimatedPreparationMinutes()).isEqualTo(10);
         assertThat(order.getLines())
-                .extracting(OrderLine::menuItemId, OrderLine::quantity, OrderLine::menuItemVersion)
+                .extracting(OrderLine::menuItemId, OrderLine::quantity)
                 .contains(
-                        org.assertj.core.groups.Tuple.tuple("pizza", 1, 1L),
-                        org.assertj.core.groups.Tuple.tuple("pasta", 2, 3L),
-                        org.assertj.core.groups.Tuple.tuple("salad", 1, 2L)
+                        org.assertj.core.groups.Tuple.tuple("pizza", 1),
+                        org.assertj.core.groups.Tuple.tuple("pasta", 2),
+                        org.assertj.core.groups.Tuple.tuple("salad", 1)
                 );
         assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
     }
@@ -103,8 +103,8 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given any order, When add and remove the same menu item, Then failure")
     void GivenAnyOrder_WhenAddAndRemoveSameMenuItemInOneOperation_ThenFailure() {
         // given
-        var order = createPickupOrderConfirmed(List.of(line("soup", 1, "10.00", 1)));
-        var newLines = List.of(line("soup", 1, "10.00", 2));
+        var order = createPickupOrderConfirmed(List.of(line("soup", 1, "10.00")));
+        var newLines = List.of(line("soup", 1, "10.00"));
         var removeLines = List.of(lineRemoval("soup", 1));
         var cmd = new ChangeOrderLinesCommand(newLines, removeLines, 0);
 
@@ -120,13 +120,13 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given order COMPLETED, When changeOrderLines, Then failure")
     void GivenOrderCompleted_WhenChangeOrderLines_ThenFailure() {
         // given
-        var order = createPickupOrderConfirmed(List.of(line("cake", 1, "15.00", 1)));
+        var order = createPickupOrderConfirmed(List.of(line("cake", 1, "15.00")));
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
         assertThat(order.complete(nonDriverUser(), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
 
-        var cmd = new ChangeOrderLinesCommand(List.of(line("tea", 1, "5.00", 1)), List.of(), 0);
+        var cmd = new ChangeOrderLinesCommand(List.of(line("tea", 1, "5.00")), List.of(), 0);
 
         // when
         var result = order.changeOrderLines(cmd, FIXED_CLOCK);
@@ -140,13 +140,13 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given order IN_DELIVERY, When changeOrderLines, Then failure")
     void GivenOrderInDelivery_WhenChangeOrderLines_ThenFailure() {
         // given
-        var order = createDeliveryOrderConfirmed(List.of(line("pizza", 1, "30.00", 1)));
+        var order = createDeliveryOrderConfirmed(List.of(line("pizza", 1, "30.00")));
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_DRIVER);
         assertThat(order.startDelivery(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.IN_DELIVERY);
 
-        var cmd = new ChangeOrderLinesCommand(List.of(line("drink", 2, "6.00", 1)), List.of(), 0);
+        var cmd = new ChangeOrderLinesCommand(List.of(line("drink", 2, "6.00")), List.of(), 0);
 
         // when
         var result = order.changeOrderLines(cmd, FIXED_CLOCK);
@@ -160,11 +160,11 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given order CANCELLED, When changeOrderLines, Then failure")
     void GivenOrderCancelled_WhenChangeOrderLines_ThenFailure() {
         // given
-        var order = createPickupOrderConfirmed(List.of(line("soda", 1, "5.00", 1)));
+        var order = createPickupOrderConfirmed(List.of(line("soda", 1, "5.00")));
         assertThat(order.cancel(new com.polsl.engineering.project.rms.order.cmd.CancelOrderCommand("client request"), FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
 
-        var cmd = new ChangeOrderLinesCommand(List.of(line("water", 1, "3.00", 1)), List.of(), 0);
+        var cmd = new ChangeOrderLinesCommand(List.of(line("water", 1, "3.00")), List.of(), 0);
 
         // when
         var result = order.changeOrderLines(cmd, FIXED_CLOCK);
@@ -178,11 +178,11 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given order READY_FOR_PICKUP, When changeOrderLines, Then status reverted to CONFIRMED")
     void GivenReadyForPickupOrder_WhenChangeOrderLines_ThenStatusRevertedToConfirmed() {
         // given
-        var order = createPickupOrderConfirmed(List.of(line("wrap", 1, "18.00", 1)));
+        var order = createPickupOrderConfirmed(List.of(line("wrap", 1, "18.00")));
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
 
-        var cmd = new ChangeOrderLinesCommand(List.of(line("cookie", 1, "4.00", 1)), List.of(), 15);
+        var cmd = new ChangeOrderLinesCommand(List.of(line("cookie", 1, "4.00")), List.of(), 15);
 
         // when
         var result = order.changeOrderLines(cmd, FIXED_CLOCK);
@@ -197,11 +197,11 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given order READY_FOR_DRIVER, When changeOrderLines, Then status reverted to CONFIRMED")
     void GivenReadyForDriverOrder_WhenChangeOrderLines_ThenStatusRevertedToConfirmed() {
         // given
-        var order = createDeliveryOrderConfirmed(List.of(line("wrap", 1, "18.00", 1)));
+        var order = createDeliveryOrderConfirmed(List.of(line("wrap", 1, "18.00")));
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_DRIVER);
 
-        var cmd = new ChangeOrderLinesCommand(List.of(line("cookie", 1, "4.00", 1)), List.of(), 17);
+        var cmd = new ChangeOrderLinesCommand(List.of(line("cookie", 1, "4.00")), List.of(), 17);
 
         // when
         var result = order.changeOrderLines(cmd, FIXED_CLOCK);
@@ -216,7 +216,7 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given null lists, When changeOrderLines, Then failure - no lines provided")
     void GivenNullLists_WhenChangeOrderLines_ThenFailureNoLinesProvided() {
         // given
-        var order = createPickupOrderConfirmed(List.of(line("wrap", 1, "18.00", 1)));
+        var order = createPickupOrderConfirmed(List.of(line("wrap", 1, "18.00")));
 
         var cmd = new ChangeOrderLinesCommand(null, null, 0);
 
@@ -232,7 +232,7 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given empty lists, When changeOrderLines, Then failure - no lines provided")
     void GivenEmptyLists_WhenChangeOrderLines_ThenFailureNoLinesProvided() {
         // given
-        var order = createPickupOrderConfirmed(List.of(line("wrap", 1, "18.00", 1)));
+        var order = createPickupOrderConfirmed(List.of(line("wrap", 1, "18.00")));
 
         var cmd = new ChangeOrderLinesCommand(List.of(), List.of(), 0);
 
@@ -248,7 +248,7 @@ class OrderChangeOrderLinesTest {
     @DisplayName("Given driver role, When attempting to complete non-delivery order, Then failure")
     void GivenDriverRole_WhenCompleteNonDelivery_ThenFailure() {
         // given: pickup order
-        var order = createPickupOrderConfirmed(List.of(line("sandwich", 1, "8.00", 1)));
+        var order = createPickupOrderConfirmed(List.of(line("sandwich", 1, "8.00")));
         assertThat(order.markAsReady(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.READY_FOR_PICKUP);
 

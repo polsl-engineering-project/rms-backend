@@ -4,6 +4,6 @@ public record OrderLine(
         String menuItemId,
         int quantity,
         Money unitPrice,
-        long menuItemVersion
+        String menuItemName
 ) {
 }

@@ -91,10 +91,10 @@ class OrderDbMapper {
     OrderLine mapOrderLine(ResultSet rs) {
         try {
             var menuItemId = rs.getString("menu_item_id");
+            var menuItemName = rs.getString("menu_item_name");
             var quantity = rs.getInt("quantity");
             var unitPrice = mapMoney(rs, "unit_price");
-            var menuItemVersion = rs.getLong("menu_item_version");
-            return new OrderLine(menuItemId, quantity, unitPrice, menuItemVersion);
+            return new OrderLine(menuItemId, quantity, unitPrice, menuItemName);
         } catch (SQLException e) {
             throw new DataRetrievalFailureException("Failed to map OrderLine from ResultSet", e);
         }
