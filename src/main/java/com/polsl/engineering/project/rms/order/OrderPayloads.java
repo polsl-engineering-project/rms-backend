@@ -12,11 +12,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Builder;
 
 public class OrderPayloads {
 
@@ -94,6 +96,61 @@ public class OrderPayloads {
             LocalDateTime approvedAt,
             LocalDateTime deliveryStartedAt
     ) {
+    }
+
+    @Builder
+    public record OrderSearchRequest(
+            List<com.polsl.engineering.project.rms.order.vo.OrderStatus> statuses,
+            Instant placedFrom,
+            Instant placedTo,
+            String customerFirstName,
+            DeliveryMode deliveryMode,
+            OrderSortField sortBy,
+            SortDirection sortDirection,
+            Integer page,
+            Integer size
+    ){
+        public OrderSearchRequest {
+            if (page == null) page = 0;
+            if (size == null) size = 20;
+            if (sortBy == null) sortBy = OrderSortField.PLACED_AT;
+            if (sortDirection == null) sortDirection = SortDirection.DESC;
+        }
+    }
+
+    public record OrderSummaryResponse(
+            UUID id,
+            com.polsl.engineering.project.rms.order.vo.OrderStatus status,
+            DeliveryMode deliveryMode,
+            String customerFirstName,
+            Instant placedAt,
+            Instant updatedAt
+    ){
+    }
+
+    public record OrderPageResponse(
+            List<OrderSummaryResponse> content,
+            int pageNumber,
+            int pageSize,
+            long totalElements,
+            int totalPages,
+            boolean first,
+            boolean last,
+            boolean hasPrevious,
+            boolean hasNext
+    ){
+    }
+
+    public enum OrderSortField {
+        PLACED_AT,
+        UPDATED_AT,
+        DELIVERY_MODE,
+        STATUS
+    }
+
+    public enum SortDirection {
+        ASC,
+        DESC
     }
 
     public record OrderWebsocketMessage(

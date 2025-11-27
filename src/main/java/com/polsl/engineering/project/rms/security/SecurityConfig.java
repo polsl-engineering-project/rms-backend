@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 "/api/v1/orders/place-delivery-order",
                                 "/api/v1/orders/*/customer-view"
                         ).anonymous()
+                        .requestMatchers("/api/v1/orders").authenticated()
                         .requestMatchers(
                                 "/api/v1/orders/*/approve/front-desk",
                                 "/api/v1/orders/*/start-delivery",

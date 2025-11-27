@@ -30,6 +30,9 @@ class OrderService {
     private final Clock clock;
     private final OrderOutboxService outboxService;
 
+    private static final Integer DEFAULT_PAGE_SIZE = 20;
+    private static final Integer DEFAULT_PAGE_NUMBER = 0;
+
     @Transactional
     OrderPayloads.OrderPlacedResponse placePickUpOrder(OrderPayloads.PlacePickUpOrderRequest request) {
         var orderLines = getOrderLines(request.orderLines());
@@ -142,6 +145,12 @@ class OrderService {
                 .toList();
     }
 
+    OrderPayloads.OrderPageResponse searchOrders(OrderPayloads.OrderSearchRequest request) {
+        var page = validatePage(request.page());
+        var size = validateSize(request.size());
+        return jdbcRepository.searchOrders(request, page, size);
+    }
+
     OrderPayloads.OrderCustomerViewResponse getOrderForCustomer(String orderId) {
         return mapper.toCustomerViewResponse(findByIdOrThrow(orderId));
     }
@@ -151,10 +160,22 @@ class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id %s not found".formatted(id)));
     }
 
-    private static <T> void validateActionResult(Result<T> result) {
+    private <T> void validateActionResult(Result<T> result) {
         if (result.isFailure()) {
             throw new InvalidOrderActionException(result.getError());
         }
+    }
+
+    private int validatePage(Integer pageNumber) {
+        return (pageNumber == null || pageNumber < 0)
+                ? DEFAULT_PAGE_NUMBER
+                : pageNumber;
+    }
+
+    private int validateSize(Integer size) {
+        return (size == null || size < 1)
+                ? DEFAULT_PAGE_SIZE
+                : size;
     }
 
     private List<OrderLine> getOrderLines(List<OrderPayloads.OrderLine> linesFromRequest) {

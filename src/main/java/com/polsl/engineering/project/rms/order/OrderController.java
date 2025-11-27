@@ -1,6 +1,8 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
+import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
+import com.polsl.engineering.project.rms.order.vo.OrderStatus;
 import com.polsl.engineering.project.rms.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,6 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.List;
 
 @Tag(name = "Order actions", description = "Operations related to order management")
 @RestController
@@ -131,6 +136,38 @@ class OrderController {
     @GetMapping("/{id}/customer-view")
     ResponseEntity<OrderPayloads.OrderCustomerViewResponse> getOrderForCustomer(@PathVariable String id) {
         return ResponseEntity.ok(orderService.getOrderForCustomer(id));
+    }
+
+    @Operation(summary = "Search and filter orders with pagination")
+    @ApiResponse(responseCode = "200", description = "Orders retrieved successfully",
+            content = @Content(schema = @Schema(implementation = OrderPayloads.OrderPageResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid input data",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping
+    ResponseEntity<OrderPayloads.OrderPageResponse> searchOrders(
+            @RequestParam(name = "statuses", required = false) List<OrderStatus> statuses,
+            @RequestParam(name = "placedFrom", required = false) Instant placedFrom,
+            @RequestParam(name = "placedTo", required = false) Instant placedTo,
+            @RequestParam(name = "customerFirstName", required = false) String customerFirstName,
+            @RequestParam(name = "deliveryMode", required = false) DeliveryMode deliveryMode,
+            @RequestParam(name = "sortBy", required = false) OrderPayloads.OrderSortField sortBy,
+            @RequestParam(name = "sortDirection", required = false) OrderPayloads.SortDirection sortDirection,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size
+    ) {
+        var request = OrderPayloads.OrderSearchRequest.builder()
+                .statuses(statuses)
+                .placedFrom(placedFrom)
+                .placedTo(placedTo)
+                .customerFirstName(customerFirstName)
+                .deliveryMode(deliveryMode)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .page(page)
+                .size(size)
+                .build();
+        var response = orderService.searchOrders(request);
+        return ResponseEntity.ok(response);
     }
 
 }

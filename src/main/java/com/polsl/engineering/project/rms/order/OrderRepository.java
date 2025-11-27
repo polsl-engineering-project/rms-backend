@@ -185,6 +185,43 @@ class OrderRepository {
         return jdbcTemplate.query(sql, this::mapOrder, completed, canceled);
     }
 
+    OrderPayloads.OrderPageResponse searchOrders(OrderPayloads.OrderSearchRequest criteria, int page, int size) {
+        var queryBuilder = new OrderQueryBuilder(criteria);
+        var countSql = queryBuilder.buildCountQuery();
+        var selectSql = queryBuilder.buildSelectQuery(page, size);
+        var selectParams = queryBuilder.getSelectParams();
+        var countParams = queryBuilder.getCountParams();
+
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, countSql, countParams.toArray());
+        Long total = jdbcTemplate.queryForObject(countSql, Long.class, countParams.toArray());
+
+        QueryLogging.logSql(log, QueryLogging.KIND_QUERY, selectSql, selectParams.toArray());
+        List<OrderPayloads.OrderSummaryResponse> content = jdbcTemplate.query(selectSql, (rs, _) -> {
+            var id = rs.getObject("id", java.util.UUID.class);
+            var status = OrderStatus.valueOf(rs.getString("order_status"));
+            var deliveryMode = DeliveryMode.valueOf(rs.getString("delivery_mode"));
+            var customerFirstName = rs.getString("customer_first_name");
+            var placedAt = dbMapper.mapInstant(rs, "placed_at");
+            var updatedAt = dbMapper.mapInstant(rs, "updated_at");
+
+            return new OrderPayloads.OrderSummaryResponse(
+                    id,
+                    status,
+                    deliveryMode,
+                    customerFirstName,
+                    placedAt,
+                    updatedAt
+            );
+        }, selectParams.toArray());
+
+        var totalPages = (int) Math.ceil((double) total / size);
+        var isFirst = page == 0;
+        var isLast = page == totalPages - 1;
+        var hasPrevious = page > 0;
+        var hasNext = page < totalPages - 1;
+        return new OrderPayloads.OrderPageResponse(content, page, size, total, totalPages, isFirst, isLast, hasPrevious, hasNext);
+    }
+
     private Order mapOrder(ResultSet rs, int rowNum) throws SQLException {
         var id = rs.getObject("id", java.util.UUID.class);
         var idVo = new OrderId(id);
