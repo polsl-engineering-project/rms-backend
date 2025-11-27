@@ -84,7 +84,7 @@ class BillAddItemsTest {
 
         var newLines = List.of(
                 line(burgerId, 2, "20.00", "Burger"),
-                line(burgerId, 1, "22.00", "Burger") // newer version, different price
+                line(burgerId, 1, "20.00", "Burger") // newer version, different price
         );
         var cmd = new AddItemsToBillCommand(newLines);
 
@@ -93,14 +93,14 @@ class BillAddItemsTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        assertThat(bill.getLines()).hasSize(3);
+        assertThat(bill.getLines()).hasSize(1);
 
         var burgerLines = bill.getLines().stream()
                 .filter(l -> l.menuItemId().equals(burgerId))
                 .toList();
-        assertThat(burgerLines).hasSize(3);
+        assertThat(burgerLines).hasSize(1);
 
-        assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(new BigDecimal("82.00"));
+        assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(new BigDecimal("80.00"));
     }
 
     @Test

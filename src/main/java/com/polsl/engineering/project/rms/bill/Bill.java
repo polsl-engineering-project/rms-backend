@@ -4,6 +4,7 @@ import com.polsl.engineering.project.rms.bill.event.*;
 import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.bill.cmd.*;
 import com.polsl.engineering.project.rms.bill.vo.*;
+import com.polsl.engineering.project.rms.order.vo.OrderLine;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import lombok.Getter;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -144,6 +146,8 @@ class Bill {
         totalAmount = calculateTotal(lines);
         updatedAt = Instant.now(clock);
 
+        groupOrderLines();
+
         events.add(new BillAddLinesEvent(
                 id,
                lines,
@@ -235,6 +239,28 @@ class Bill {
         }
 
         return Result.ok(new ArrayList<>(groupedCurrentLines.values()));
+    }
+
+    private void groupOrderLines() {
+        var groupedMap = new HashMap<String, BillLine>();
+        for (var line : lines) {
+            if (groupedMap.containsKey(line.menuItemId())) {
+                var existingLine = groupedMap.get(line.menuItemId());
+                var updatedQuantity = existingLine.quantity() + line.quantity();
+                var updatedLine = new BillLine(
+                        line.menuItemId(),
+                        updatedQuantity,
+                        line.unitPrice(),
+                        line.menuItemName()
+                );
+                groupedMap.put(line.menuItemId(), updatedLine);
+            } else {
+                groupedMap.put(line.menuItemId(), line);
+            }
+        }
+
+        lines.clear();
+        lines.addAll(groupedMap.values());
     }
 
     private static Money calculateTotal(List<BillLine> lines) {
