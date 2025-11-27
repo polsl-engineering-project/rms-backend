@@ -14,8 +14,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
@@ -72,6 +74,7 @@ class Order {
         this.placedAt = Instant.now(clock);
         this.updatedAt = Instant.now(clock);
         this.version = 0;
+        groupOrderLines();
     }
 
     // ==== Factory Methods ====
@@ -260,10 +263,7 @@ class Order {
         }
 
         if (!removeLines.isEmpty()) {
-            var removeResult = OrderLinesRemover.remove(
-                    lines,
-                    removeLines
-            );
+            var removeResult = removeLines(lines, removeLines);
 
             if (removeResult.isFailure()) {
                 return Result.failure(removeResult.getError());
@@ -274,6 +274,7 @@ class Order {
         }
 
         lines.addAll(newLines);
+        groupOrderLines();
 
         if (status == OrderStatus.READY_FOR_PICKUP ||
                 status == OrderStatus.READY_FOR_DRIVER ||
@@ -367,6 +368,58 @@ class Order {
 
     boolean isFinished() {
         return status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED;
+    }
+
+    // ==== Helper methods ====
+    private static Result<List<OrderLine>> removeLines(List<OrderLine> currentLines, List<OrderLineRemoval> orderLineRemovals) {
+        var groupedCurrentLines = currentLines.stream()
+                .collect(Collectors.toMap(OrderLine::menuItemId, x -> x));
+        var result = new ArrayList<OrderLine>();
+
+        for (var removeLine : orderLineRemovals) {
+            var existingLine = groupedCurrentLines.get(removeLine.menuItemId());
+            if (existingLine == null) {
+                return Result.failure("Cannot remove a non-existing order line: " + removeLine.menuItemId());
+            }
+            if (removeLine.quantity() > existingLine.quantity()) {
+                return Result.failure("Cannot remove more quantity than exists for menu item id: " + removeLine.menuItemId());
+            }
+
+            var remainingQuantity = existingLine.quantity() - removeLine.quantity();
+            if (remainingQuantity > 0) {
+                var updatedLine = new OrderLine(
+                        existingLine.menuItemId(),
+                        remainingQuantity,
+                        existingLine.unitPrice(),
+                        existingLine.menuItemVersion()
+                );
+                result.add(updatedLine);
+            }
+        }
+
+        return Result.ok(result);
+    }
+
+    private void groupOrderLines() {
+        var groupedMap = new HashMap<String, OrderLine>();
+        for (var line : lines) {
+            if (groupedMap.containsKey(line.menuItemId())) {
+                var existingLine = groupedMap.get(line.menuItemId());
+                var updatedQuantity = existingLine.quantity() + line.quantity();
+                var updatedLine = new OrderLine(
+                        line.menuItemId(),
+                        updatedQuantity,
+                        line.unitPrice(),
+                        line.menuItemVersion()
+                );
+                groupedMap.put(line.menuItemId(), updatedLine);
+            } else {
+                groupedMap.put(line.menuItemId(), line);
+            }
+        }
+
+        lines.clear();
+        lines.addAll(groupedMap.values());
     }
 
     // ==== Getters for Collections ====

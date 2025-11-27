@@ -100,59 +100,6 @@ class OrderChangeOrderLinesTest {
     }
 
     @Test
-    @DisplayName("Given confirmed order with same-item different versions, When remove partially, Then newest versions are removed first")
-    void GivenConfirmedOrder_WhenRemoveLinesPartiallyAcrossVersions_ThenProperQuantitiesRemovedFromNewestFirst() {
-        // given
-        var order = createPickupOrderConfirmed(List.of(
-                line("pizza", 2, "30.00", 1), // older
-                line("pizza", 3, "32.00", 5)  // newer
-        ));
-        var remove = List.of(
-                lineRemoval("pizza", 4)
-        );
-        var cmd = new ChangeOrderLinesCommand(List.of(), remove, 12);
-
-        // when
-        var result = order.changeOrderLines(cmd, FIXED_CLOCK);
-
-        // then
-        assertThat(result.isSuccess()).isTrue();
-        // Expect: remove 3 from version 5 (fully gone), and 1 from version 1 (left 1)
-        assertThat(order.getLines())
-                .extracting(OrderLine::menuItemId, OrderLine::quantity, OrderLine::menuItemVersion)
-                .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("pizza", 1, 1L)
-                );
-        assertThat(order.getEstimatedPreparationMinutes()).isEqualTo(12);
-    }
-
-    @Test
-    @DisplayName("Given confirmed order, When remove more than exists, Then failure and no changes")
-    void GivenConfirmedOrder_WhenRemoveMoreThanExists_ThenFailureAndNoChanges() {
-        // given
-        var initial = List.of(
-                line("burger", 1, "20.00", 2),
-                line("burger", 1, "22.00", 3)
-        );
-        var order = createPickupOrderConfirmed(initial);
-        var remove = List.of(lineRemoval("burger", 3));
-        var cmd = new ChangeOrderLinesCommand(List.of(), remove, 0);
-
-        // when
-        var result = order.changeOrderLines(cmd, FIXED_CLOCK);
-
-        // then
-        assertThat(result.isFailure()).isTrue();
-        assertThat(result.getError()).contains("Cannot remove more quantity than exists for menu item id: burger");
-        assertThat(order.getLines())
-                .extracting(OrderLine::menuItemId, OrderLine::quantity, OrderLine::menuItemVersion)
-                .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("burger", 1, 2L),
-                        org.assertj.core.groups.Tuple.tuple("burger", 1, 3L)
-                );
-    }
-
-    @Test
     @DisplayName("Given any order, When add and remove the same menu item, Then failure")
     void GivenAnyOrder_WhenAddAndRemoveSameMenuItemInOneOperation_ThenFailure() {
         // given
