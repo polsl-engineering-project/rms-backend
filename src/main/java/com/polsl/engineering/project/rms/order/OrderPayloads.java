@@ -6,6 +6,7 @@ import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
 import com.polsl.engineering.project.rms.order.vo.OrderType;
 import com.polsl.engineering.project.rms.order.vo.Money;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -93,7 +94,8 @@ public class OrderPayloads {
             List<OrderLineResponse> orderLines,
             Integer estimatedPreparationTimeMinutes,
             LocalDateTime approvedAt,
-            LocalDateTime deliveryStartedAt
+            LocalDateTime deliveryStartedAt,
+            Instant placedAt
     ) {
     }
 

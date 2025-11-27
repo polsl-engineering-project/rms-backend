@@ -12,7 +12,9 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -38,6 +40,7 @@ class BillWebsocketHandlerTest {
     void GivenOpenBills_WhenAfterConnectionEstablished_ThenSendInitialDataAndRegisterSession() throws Exception {
         //given
         WebSocketSession session = mock(WebSocketSession.class);
+        when(session.getAttributes()).thenReturn(Map.of("authenticated", true));
         when(billService.getOpenBills()).thenReturn(List.of());
         var realOm = new ObjectMapper();
         handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
@@ -57,6 +60,7 @@ class BillWebsocketHandlerTest {
     void GivenBillServiceThrows_WhenAfterConnectionEstablished_ThenCloseSessionAndRegisterSession() throws Exception {
         //given
         WebSocketSession session = mock(WebSocketSession.class);
+        when(session.getAttributes()).thenReturn(Map.of("authenticated", true));
         when(billService.getOpenBills()).thenThrow(new RuntimeException("service error"));
         var realOm = new ObjectMapper();
         handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
@@ -103,6 +107,7 @@ class BillWebsocketHandlerTest {
     void GivenSessionSendMessageFails_WhenAfterConnectionEstablished_ThenCloseSession() throws Exception {
         //given
         WebSocketSession session = mock(WebSocketSession.class);
+        when(session.getAttributes()).thenReturn(Map.of("authenticated", true));
         when(billService.getOpenBills()).thenReturn(List.of());
         doThrow(new RuntimeException("send failed")).when(session).sendMessage(any(TextMessage.class));
         var realOm = new ObjectMapper();
@@ -114,5 +119,45 @@ class BillWebsocketHandlerTest {
         //then
         verify(session).close();
         verify(sessionRegistry).registerSession(session);
+    }
+
+    @Test
+    @DisplayName("GivenUnauthenticatedSession_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister")
+    void GivenUnauthenticatedSession_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        Map<String, Object> attributes = Map.of("authenticated", false);
+        when(session.getAttributes()).thenReturn(attributes);
+        var realOm = new ObjectMapper();
+        handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        verify(session, never()).sendMessage(any());
+        verify(session).close(CloseStatus.SERVER_ERROR);
+        verify(sessionRegistry, never()).registerSession(session);
+        verify(billService, never()).getOpenBills();
+    }
+
+    @Test
+    @DisplayName("GivenSessionWithoutAuthAttribute_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister")
+    void GivenSessionWithoutAuthAttribute_WhenAfterConnectionEstablished_ThenCloseSessionAndDoNotRegister() throws Exception {
+        //given
+        WebSocketSession session = mock(WebSocketSession.class);
+        Map<String, Object> attributes = Collections.emptyMap();
+        when(session.getAttributes()).thenReturn(attributes);
+        var realOm = new ObjectMapper();
+        handler = new BillWebsocketHandler(billService, realOm, sessionRegistry);
+
+        //when
+        handler.afterConnectionEstablished(session);
+
+        //then
+        verify(session, never()).sendMessage(any());
+        verify(session).close(CloseStatus.SERVER_ERROR);
+        verify(sessionRegistry, never()).registerSession(session);
+        verify(billService, never()).getOpenBills();
     }
 }

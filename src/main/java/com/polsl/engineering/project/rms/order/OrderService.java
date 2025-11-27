@@ -3,6 +3,7 @@ package com.polsl.engineering.project.rms.order;
 import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.general.result.Result;
 import com.polsl.engineering.project.rms.menu.MenuApi;
+import com.polsl.engineering.project.rms.order.event.OrderInitialDataEvent;
 import com.polsl.engineering.project.rms.order.exception.InvalidOrderActionException;
 import com.polsl.engineering.project.rms.order.exception.MenuItemNotFoundException;
 import com.polsl.engineering.project.rms.order.vo.Money;
@@ -137,10 +138,10 @@ class OrderService {
         saveEvents(order);
     }
 
-    List<OrderPayloads.OrderDetailsResponse> getActiveOrders() {
+    List<OrderInitialDataEvent> getActiveOrders() {
         return jdbcRepository.findActiveOrders()
                 .stream()
-                .map(mapper::toDetailsResponse)
+                .map(mapper::toInitialData)
                 .toList();
     }
 

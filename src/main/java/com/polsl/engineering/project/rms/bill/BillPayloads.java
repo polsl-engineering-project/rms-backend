@@ -2,6 +2,7 @@ package com.polsl.engineering.project.rms.bill;
 
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
 import com.polsl.engineering.project.rms.order.OrderPayloads;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Builder;

@@ -1,8 +1,10 @@
 package com.polsl.engineering.project.rms.bill;
 
+import com.polsl.engineering.project.rms.bill.event.*;
 import com.polsl.engineering.project.rms.bill.vo.BillStatus;
 import com.polsl.engineering.project.rms.general.error_handler.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -131,5 +133,26 @@ class BillController {
     ResponseEntity<Void> closeBill(@PathVariable("id") String id) {
         billService.closeBill(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @Operation(
+            summary = "WebSocket BillEvent Documentation",
+            description = "Only for Bill WebSocket schemas exposition"
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "WebSocket BillEvent schemas",
+            content = @Content(array = @ArraySchema(schema = @Schema(oneOf = {
+                    BillOpenedEvent.class,
+                    BillAddLinesEvent.class,
+                    BillRemoveLinesEvent.class,
+                    BillClosedEvent.class,
+                    BillInitialDataEvent.class
+            }))
+            ))
+    @GetMapping("/docs/ws/bill-events")
+    public void docs() {
+        // ignore
     }
 }

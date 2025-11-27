@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.polsl.engineering.project.rms.order.event.OrderEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,12 @@ class OrderWebsocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
+        Boolean authenticated = (Boolean) session.getAttributes().get("authenticated");
+        if (authenticated == null || !authenticated) {
+            log.warn("Unauthenticated Order WebSocket connection attempt");
+            session.close(CloseStatus.SERVER_ERROR);
+            return;
+        }
         sendInitialData(session);
         sessionRegistry.registerSession(session);
     }
@@ -34,7 +41,7 @@ class OrderWebsocketHandler extends TextWebSocketHandler {
     private void sendInitialData(WebSocketSession session) throws IOException {
         try {
             var message = new OrderPayloads.OrderWebsocketMessage(
-                    "INITIAL_DATA",
+                    OrderEventType.INITIAL_DATA.toString(),
                     orderService.getActiveOrders()
             );
             var payload = om.writeValueAsString(message);

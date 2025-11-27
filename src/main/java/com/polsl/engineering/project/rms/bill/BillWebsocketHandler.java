@@ -1,6 +1,7 @@
 package com.polsl.engineering.project.rms.bill;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.polsl.engineering.project.rms.bill.event.BillEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,12 @@ class BillWebsocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws IOException {
+        Boolean authenticated = (Boolean) session.getAttributes().get("authenticated");
+        if (authenticated == null || !authenticated) {
+            log.warn("Unauthenticated Bill WebSocket connection attempt");
+            session.close(CloseStatus.SERVER_ERROR);
+            return;
+        }
         sendInitialData(session);
         sessionRegistry.registerSession(session);
     }
@@ -34,7 +41,7 @@ class BillWebsocketHandler extends TextWebSocketHandler {
     private void sendInitialData(WebSocketSession session) throws IOException {
         try {
             var message = new BillPayloads.BillWebsocketMessage(
-                    "INITIAL_DATA",
+                    BillEventType.INITIAL_DATA.toString(),
                     billService.getOpenBills()
             );
             var payload = om.writeValueAsString(message);
