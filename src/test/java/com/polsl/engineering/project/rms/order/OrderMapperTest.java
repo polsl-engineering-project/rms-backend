@@ -60,6 +60,7 @@ class OrderMapperTest {
         assertThat(payload.menuItemId()).isEqualTo(uuid);
         assertThat(payload.quantity()).isEqualTo(3);
         assertThat(payload.menuItemName()).isEqualTo("name");
+        assertThat(payload.unitPrice()).isEqualTo(Money.zero());
     }
 
     @Test
@@ -110,6 +111,7 @@ class OrderMapperTest {
         assertThat(mappedLine.menuItemId()).isEqualTo(UUID.fromString(lineUuid));
         assertThat(mappedLine.quantity()).isEqualTo(1);
         assertThat(mappedLine.menuItemName()).isEqualTo("name");
+        assertThat(mappedLine.unitPrice()).isEqualTo(Money.zero());
     }
 
 }

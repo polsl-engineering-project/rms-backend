@@ -4,6 +4,7 @@ import com.polsl.engineering.project.rms.order.vo.Address;
 import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
 import com.polsl.engineering.project.rms.order.vo.OrderType;
+import com.polsl.engineering.project.rms.order.vo.Money;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -32,6 +33,7 @@ public class OrderPayloads {
     public record OrderLineResponse(
             UUID menuItemId,
             int quantity,
+            Money unitPrice,
             String menuItemName
     ) {
     }
