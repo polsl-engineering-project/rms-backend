@@ -3,6 +3,7 @@ package com.polsl.engineering.project.rms.order;
 import com.polsl.engineering.project.rms.order.vo.Address;
 import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
 import com.polsl.engineering.project.rms.order.vo.DeliveryMode;
+import com.polsl.engineering.project.rms.order.vo.OrderType;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -91,6 +92,7 @@ public class OrderPayloads {
     public record OrderCustomerViewResponse(
             UUID id,
             String status,
+            OrderType orderType,
             Integer estimatedPreparationMinutes,
             String cancellationReason,
             LocalDateTime approvedAt,
