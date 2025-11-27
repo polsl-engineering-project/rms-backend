@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
@@ -162,7 +163,7 @@ class Bill {
             return Result.failure("No items to remove were provided");
         }
 
-        var removeResult = BillLinesRemover.remove(lines, removeLines);
+        var removeResult = removeLines(lines, removeLines);
         if (removeResult.isFailure()) {
             return Result.failure(removeResult.getError());
         }
@@ -206,11 +207,40 @@ class Bill {
         return Result.ok(null);
     }
 
+    private static Result<List<BillLine>> removeLines(List<BillLine> currentLines, List<BillLineRemoval> billLineRemovals) {
+        var groupedCurrentLines = currentLines.stream()
+                .collect(Collectors.toMap(BillLine::menuItemId, x -> x));
+
+        for (var removeLine : billLineRemovals) {
+            var existingLine = groupedCurrentLines.get(removeLine.menuItemId());
+            if (existingLine == null) {
+                return Result.failure("Menu item id: " + removeLine.menuItemId() + " not found in bill");
+            }
+            if (removeLine.quantity() > existingLine.quantity()) {
+                return Result.failure("Cannot remove more quantity than exists for menu item id: " + removeLine.menuItemId());
+            }
+
+            var remainingQuantity = existingLine.quantity() - removeLine.quantity();
+            if (remainingQuantity > 0) {
+                var updatedLine = new BillLine(
+                        existingLine.menuItemId(),
+                        remainingQuantity,
+                        existingLine.unitPrice(),
+                        existingLine.menuItemName()
+                );
+                groupedCurrentLines.put(removeLine.menuItemId(), updatedLine);
+            } else {
+                groupedCurrentLines.remove(removeLine.menuItemId());
+            }
+        }
+
+        return Result.ok(new ArrayList<>(groupedCurrentLines.values()));
+    }
+
     private static Money calculateTotal(List<BillLine> lines) {
-        var total = lines.stream()
+        return lines.stream()
                 .map(line -> line.unitPrice().multiply(line.quantity()))
                 .reduce(Money.ZERO, Money::add);
-        return total;
     }
 
     List<BillLine> getLines() {

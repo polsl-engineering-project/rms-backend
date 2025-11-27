@@ -31,8 +31,8 @@ class BillRemoveItemsTest {
         return result.getValue();
     }
 
-    private static BillLine line(String id, int qty, String price, String name, long version) {
-        return new BillLine(id, qty, new Money(new BigDecimal(price)), name, version);
+    private static BillLine line(String id, int qty, String price, String name) {
+        return new BillLine(id, qty, new Money(new BigDecimal(price)), name);
     }
 
     private static BillLineRemoval lineRemoval(String id, int qty) {
@@ -46,8 +46,8 @@ class BillRemoveItemsTest {
         var pizzaId = UUID.randomUUID().toString();
         var saladId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(pizzaId, 2, "30.00", "Pizza", 1),
-                line(saladId, 1, "12.00", "Salad", 1)
+                line(pizzaId, 2, "30.00", "Pizza"),
+                line(saladId, 1, "12.00", "Salad")
         ));
         assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(new BigDecimal("72.00"));
 
@@ -69,41 +69,12 @@ class BillRemoveItemsTest {
     }
 
     @Test
-    @DisplayName("Given open bill with same item different versions, When remove partially, Then newest versions removed first")
-    void GivenBillWithSameItemDifferentVersions_WhenRemovePartially_ThenNewestRemovedFirst() {
-        // given
-        var burgerId = UUID.randomUUID().toString();
-        var bill = createOpenBill(List.of(
-                line(burgerId, 2, "20.00", "Burger", 1), // older version
-                line(burgerId, 3, "22.00", "Burger", 5)  // newer version
-        ));
-
-        var cmd = new RemoveItemsFromBillCommand(List.of(
-                lineRemoval(burgerId, 4)
-        ));
-
-        // when
-        var result = bill.removeItems(cmd, FIXED_CLOCK);
-
-        // then
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(bill.getLines())
-                .hasSize(1)
-                .extracting(BillLine::menuItemId, BillLine::quantity, BillLine::menuItemVersion)
-                .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple(burgerId, 1, 1L)
-                );
-
-        assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(new BigDecimal("20.00"));
-    }
-
-    @Test
     @DisplayName("Given open bill, When remove more quantity than exists, Then failure and no changes")
     void GivenOpenBill_WhenRemoveMoreThanExists_ThenFailureAndNoChanges() {
         // given
         var pastaId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(pastaId, 2, "25.00", "Pasta", 1)
+                line(pastaId, 2, "25.00", "Pasta")
         ));
         var initialTotal = bill.getTotalAmount();
 
@@ -127,7 +98,7 @@ class BillRemoveItemsTest {
         // given
         var soupId =  UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(soupId, 1, "10.00", "Soup", 1)
+                line(soupId, 1, "10.00", "Soup")
         ));
 
         var cmd = new RemoveItemsFromBillCommand(List.of(
@@ -149,7 +120,7 @@ class BillRemoveItemsTest {
         // given
         var drinkId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(drinkId, 3, "6.00", "Drink", 1)
+                line(drinkId, 3, "6.00", "Drink")
         ));
 
         var cmd = new RemoveItemsFromBillCommand(List.of(
@@ -171,7 +142,7 @@ class BillRemoveItemsTest {
         // given
         var cakeId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(cakeId, 2, "15.00", "Cake", 1)
+                line(cakeId, 2, "15.00", "Cake")
         ));
         assertThat(bill.close(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(bill.getStatus()).isEqualTo(BillStatus.CLOSED);
@@ -195,8 +166,8 @@ class BillRemoveItemsTest {
         var wrapId =  UUID.randomUUID().toString();
         var sodaId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(wrapId, 1, "18.00", "Wrap", 1),
-                line(sodaId, 1, "5.00", "Soda", 1)
+                line(wrapId, 1, "18.00", "Wrap"),
+                line(sodaId, 1, "5.00", "Soda")
         ));
 
         var cmd = new RemoveItemsFromBillCommand(List.of());
@@ -217,8 +188,8 @@ class BillRemoveItemsTest {
         var coffeeId = UUID.randomUUID().toString();
         var cookieId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(coffeeId, 5, "8.50", "Coffee", 1),
-                line(cookieId, 3, "2.50", "Cookie", 1)
+                line(coffeeId, 5, "8.50", "Coffee"),
+                line(cookieId, 3, "2.50", "Cookie")
         ));
 
         var cmd = new RemoveItemsFromBillCommand(List.of(
@@ -249,9 +220,9 @@ class BillRemoveItemsTest {
         var item2Id = UUID.randomUUID().toString();
         var item3Id = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(item1Id, 2, "10.00", "Item1", 1),
-                line(item2Id, 1, "15.00", "Item2", 1),
-                line(item3Id, 3, "5.00", "Item3", 1)
+                line(item1Id, 2, "10.00", "Item1"),
+                line(item2Id, 1, "15.00", "Item2"),
+                line(item3Id, 3, "5.00", "Item3")
         ));
 
         var cmd = new RemoveItemsFromBillCommand(List.of(
@@ -273,27 +244,5 @@ class BillRemoveItemsTest {
                 );
 
         assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(new BigDecimal("25.00"));
-    }
-
-    @Test
-    @DisplayName("Given bill with same item across versions, When remove all, Then failure - cannot remove all")
-    void GivenSameItemMultipleVersions_WhenRemoveAll_ThenFailure() {
-        // given
-        var pizzaId = UUID.randomUUID().toString();
-        var bill = createOpenBill(List.of(
-                line(pizzaId, 1, "30.00", "Pizza", 1),
-                line(pizzaId, 2, "32.00", "Pizza", 2)
-        ));
-
-        var cmd = new RemoveItemsFromBillCommand(List.of(
-                lineRemoval(pizzaId, 3)
-        ));
-
-        // when
-        var result = bill.removeItems(cmd, FIXED_CLOCK);
-
-        // then
-        assertThat(result.isFailure()).isTrue();
-        assertThat(result.getError()).isEqualTo("Cannot remove all items from bill.");
     }
 }

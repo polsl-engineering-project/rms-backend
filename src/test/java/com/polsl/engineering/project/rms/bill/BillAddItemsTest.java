@@ -31,8 +31,8 @@ class BillAddItemsTest {
         return result.getValue();
     }
 
-    private static BillLine line(String id, int qty, String price, String name, long version) {
-        return new BillLine(id, qty, new Money(new BigDecimal(price)), name, version);
+    private static BillLine line(String id, int qty, String price, String name) {
+        return new BillLine(id, qty, new Money(new BigDecimal(price)), name);
     }
 
     @Test
@@ -44,14 +44,14 @@ class BillAddItemsTest {
         var pastaId = UUID.randomUUID().toString();
 
         var bill = createOpenBill(List.of(
-                line(pizzaId, 1, "30.00", "Pizza", 1)
+                line(pizzaId, 1, "30.00", "Pizza")
         ));
         var initialTotal = bill.getTotalAmount();
         assertThat(initialTotal.amount()).isEqualByComparingTo(new BigDecimal("30.00"));
 
         var newLines = List.of(
-                line(pastaId, 2, "25.50", "Pasta", 1),
-                line(saladId, 1, "12.00", "Salad", 1)
+                line(pastaId, 2, "25.50", "Pasta"),
+                line(saladId, 1, "12.00", "Salad")
         );
         var cmd = new AddItemsToBillCommand(newLines);
 
@@ -79,12 +79,12 @@ class BillAddItemsTest {
         // given
         var burgerId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(burgerId, 1, "20.00", "Burger", 1)
+                line(burgerId, 1, "20.00", "Burger")
         ));
 
         var newLines = List.of(
-                line(burgerId, 2, "20.00", "Burger", 1),
-                line(burgerId, 1, "22.00", "Burger", 2) // newer version, different price
+                line(burgerId, 2, "20.00", "Burger"),
+                line(burgerId, 1, "22.00", "Burger") // newer version, different price
         );
         var cmd = new AddItemsToBillCommand(newLines);
 
@@ -110,13 +110,13 @@ class BillAddItemsTest {
         var soupId = UUID.randomUUID().toString();
         var teaId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(soupId, 1, "10.00", "Soup", 1)
+                line(soupId, 1, "10.00", "Soup")
         ));
         assertThat(bill.close(FIXED_CLOCK).isSuccess()).isTrue();
         assertThat(bill.getStatus()).isEqualTo(BillStatus.CLOSED);
 
         var cmd = new AddItemsToBillCommand(List.of(
-                line(teaId, 1, "5.00", "Tea", 1)
+                line(teaId, 1, "5.00", "Tea")
         ));
 
         // when
@@ -134,7 +134,7 @@ class BillAddItemsTest {
         // given
         var wrapId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(wrapId, 1, "18.00", "Wrap", 1)
+                line(wrapId, 1, "18.00", "Wrap")
         ));
 
         var cmd = new AddItemsToBillCommand(List.of());
@@ -154,7 +154,7 @@ class BillAddItemsTest {
         // given
         var sodaId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(sodaId, 1, "5.00", "Soda", 1)
+                line(sodaId, 1, "5.00", "Soda")
         ));
 
         var cmd = new AddItemsToBillCommand(null);
@@ -174,12 +174,12 @@ class BillAddItemsTest {
         var freeItemId = UUID.randomUUID().toString();
         var coffeeId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(freeItemId, 1, "0.00", "Free Item", 1)
+                line(freeItemId, 1, "0.00", "Free Item")
         ));
         assertThat(bill.getTotalAmount().amount()).isEqualByComparingTo(BigDecimal.ZERO);
 
         var newLines = List.of(
-                line(coffeeId, 3, "8.50", "Coffee", 1)
+                line(coffeeId, 3, "8.50", "Coffee")
         );
         var cmd = new AddItemsToBillCommand(newLines);
 
@@ -198,11 +198,11 @@ class BillAddItemsTest {
         var drinkId = UUID.randomUUID().toString();
         var cookieId = UUID.randomUUID().toString();
         var bill = createOpenBill(List.of(
-                line(drinkId, 1, "6.00", "Drink", 1)
+                line(drinkId, 1, "6.00", "Drink")
         ));
 
         var newLines = List.of(
-                line(cookieId, 50, "2.50", "Cookie", 1)
+                line(cookieId, 50, "2.50", "Cookie")
         );
         var cmd = new AddItemsToBillCommand(newLines);
 

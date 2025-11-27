@@ -56,9 +56,8 @@ class BillRepository {
                 menu_item_id,
                 quantity,
                 unit_price,
-                menu_item_name,
-                menu_item_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                menu_item_name
+            ) VALUES (?, ?, ?, ?, ?, ?)
             """;
 
     private static final String BILL_LINES_DELETE_SQL = """
@@ -241,7 +240,7 @@ class BillRepository {
         for (var line : lines) {
             var lineId = UUID.randomUUID();
             var unitPrice = line.unitPrice().amount();
-            batchArgs.add(new Object[]{lineId, billId, line.menuItemId(), line.quantity(), unitPrice, line.menuItemName(), line.menuItemVersion()});
+            batchArgs.add(new Object[]{lineId, billId, line.menuItemId(), line.quantity(), unitPrice, line.menuItemName()});
         }
         var sample = batchArgs.size() > 3 ? batchArgs.subList(0, 3) : batchArgs;
         QueryLogging.logBatch(log, BILL_LINES_INSERT_SQL, batchArgs.size(), sample);

@@ -19,8 +19,8 @@ class BillOtherMethodsTest {
 
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2025-01-01T12:00:00Z"), ZoneOffset.UTC);
 
-    private static BillLine line(String id, int qty, String price, String name, long version) {
-        return new BillLine(id, qty, new Money(new BigDecimal(price)), name, version);
+    private static BillLine line(String id, int qty, String price, String name) {
+        return new BillLine(id, qty, new Money(new BigDecimal(price)), name);
     }
 
 
@@ -33,8 +33,8 @@ class BillOtherMethodsTest {
         var saladId = UUID.randomUUID().toString();
         var waiterInfo = UUID.randomUUID().toString();
         var lines = List.of(
-                line(pizzaId, 2, "30.00", "Pizza", 1),
-                line(saladId, 1, "12.00", "Salad", 1)
+                line(pizzaId, 2, "30.00", "Pizza"),
+                line(saladId, 1, "12.00", "Salad")
         );
         var cmd = new OpenBillCommand(tableNumber, waiterInfo, lines);
 
@@ -58,7 +58,7 @@ class BillOtherMethodsTest {
     void GivenNullTableNumber_WhenOpenBill_ThenFailure() {
         // given
         var waiterInfo = UUID.randomUUID().toString();
-        var lines = List.of(line(UUID.randomUUID().toString(), 1, "10.00", "Item", 1));
+        var lines = List.of(line(UUID.randomUUID().toString(), 1, "10.00", "Item"));
         var cmd = new OpenBillCommand(null, waiterInfo, lines);
 
         // when
@@ -74,7 +74,7 @@ class BillOtherMethodsTest {
     void GivenNullWaiterInfo_WhenOpenBill_ThenFailure() {
         // given
         var tableNumber = TableNumber.of(5);
-        var lines = List.of(line(UUID.randomUUID().toString(), 1, "10.00", "Item", 1));
+        var lines = List.of(line(UUID.randomUUID().toString(), 1, "10.00", "Item"));
         var cmd = new OpenBillCommand(tableNumber, null, lines);
 
         // when
@@ -124,7 +124,7 @@ class BillOtherMethodsTest {
         var cmd = new OpenBillCommand(
                 TableNumber.of(3),
                 UUID.randomUUID().toString(),
-                List.of(line(UUID.randomUUID().toString(), 1, "20.00", "Burger", 1))
+                List.of(line(UUID.randomUUID().toString(), 1, "20.00", "Burger"))
         );
         var openResult = Bill.open(cmd, FIXED_CLOCK);
         assertThat(openResult.isSuccess()).isTrue();
@@ -147,7 +147,7 @@ class BillOtherMethodsTest {
         var cmd = new OpenBillCommand(
                 TableNumber.of(3),
                 UUID.randomUUID().toString(),
-                List.of(line(UUID.randomUUID().toString(), 1, "10.00", "Soup", 1))
+                List.of(line(UUID.randomUUID().toString(), 1, "10.00", "Soup"))
         );
         var openResult = Bill.open(cmd, FIXED_CLOCK);
         assertThat(openResult.isSuccess()).isTrue();

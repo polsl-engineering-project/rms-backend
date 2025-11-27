@@ -4,7 +4,6 @@ import com.polsl.engineering.project.rms.bill.cmd.OpenBillCommand;
 import com.polsl.engineering.project.rms.bill.event.BillEvent;
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
-import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
 import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.menu.MenuApi;
@@ -55,7 +54,7 @@ class BillServiceTest {
     void GivenValidOpenBillRequest_WhenOpenBill_ThenSavesBillAndReturnsResponse() {
         // given
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(payloadLineId, 2, 1L);
+        var payloadLine = new BillPayloads.BillLine(payloadLineId, 2);
         var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(5, waiterInfo, List.of(payloadLine));
 
@@ -91,7 +90,7 @@ class BillServiceTest {
     void GivenTableWithOpenBill_WhenOpenBill_ThenThrowsInvalidBillActionException() {
         // given
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(payloadLineId, 1, 0L);
+        var payloadLine = new BillPayloads.BillLine(payloadLineId, 1);
         var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(7, waiterInfo, List.of(payloadLine));
 
@@ -111,7 +110,7 @@ class BillServiceTest {
     void GivenMissingMenuItem_WhenOpenBill_ThenThrowsMenuItemNotFoundException() {
         // given
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(payloadLineId, 1, 0L);
+        var payloadLine = new BillPayloads.BillLine(payloadLineId, 1);
         var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(10, waiterInfo, List.of(payloadLine));
 
@@ -130,9 +129,9 @@ class BillServiceTest {
     @Test
     @DisplayName("Given version mismatch, When openBill, Then throws MenuItemVersionMismatchException")
     void GivenVersionMismatch_WhenOpenBill_ThenThrowsMenuItemVersionMismatchException() {
-        // given
+        // given a payload without version (version was removed from DTO), opening should succeed
         var payloadLineId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(payloadLineId, 1, 5L); // request says version 5
+        var payloadLine = new BillPayloads.BillLine(payloadLineId, 1);
         var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(12, waiterInfo, List.of(payloadLine));
 
@@ -140,12 +139,24 @@ class BillServiceTest {
         var snapshot = new MenuItemSnapshotForOrder(payloadLineId, new BigDecimal("20.00"), "Item", 1L);
         when(menuApi.getSnapshotsForOrderByIds(anyList())).thenReturn(Map.of(payloadLineId, snapshot));
 
-        // when / then
-        assertThatThrownBy(() -> underTest.openBill(request))
-                .isInstanceOf(MenuItemVersionMismatchException.class);
+        when(mapper.toCommand(any(BillPayloads.OpenBillRequest.class), anyList()))
+                .thenAnswer(invocation -> new OpenBillCommand(
+                        TableNumber.of(invocation.getArgument(0, BillPayloads.OpenBillRequest.class).tableNumber()),
+                        invocation.getArgument(0, BillPayloads.OpenBillRequest.class).userId(),
+                        invocation.getArgument(1, List.class)
+                ));
 
-        verify(billRepository, never()).saveNewBill(any());
-        verify(outboxService, never()).persistEvent(any(), any());
+        var expectedUuid = UUID.randomUUID();
+        when(mapper.toResponse(any(Bill.class))).thenReturn(new BillPayloads.BillOpenedResponse(expectedUuid, 12));
+
+        // when
+        var response = underTest.openBill(request);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.id()).isEqualTo(expectedUuid);
+        verify(billRepository).saveNewBill(any(Bill.class));
+        verify(outboxService).persistEvent(any(), any());
     }
 
     @Test
@@ -161,7 +172,7 @@ class BillServiceTest {
         when(billMock.getId()).thenReturn(BillId.generate());
 
         var menuItemId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(menuItemId, 2, 1L);
+        var payloadLine = new BillPayloads.BillLine(menuItemId, 2);
         var request = new BillPayloads.AddItemsToBillRequest(List.of(payloadLine));
 
         var snapshot = new MenuItemSnapshotForOrder(menuItemId, new BigDecimal("15.00"), "NewItem", 1L);
@@ -184,7 +195,7 @@ class BillServiceTest {
         when(billRepository.findById(any())).thenReturn(Optional.empty());
 
         var menuItemId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(menuItemId, 1, 0L);
+        var payloadLine = new BillPayloads.BillLine(menuItemId, 1);
         var request = new BillPayloads.AddItemsToBillRequest(List.of(payloadLine));
 
         // when / then
@@ -206,7 +217,7 @@ class BillServiceTest {
         when(billMock.addItems(any(), any(Clock.class))).thenReturn(com.polsl.engineering.project.rms.general.result.Result.failure("cannot add"));
 
         var menuItemId = UUID.randomUUID();
-        var payloadLine = new BillPayloads.BillLine(menuItemId, 1, 0L);
+        var payloadLine = new BillPayloads.BillLine(menuItemId, 1);
         var request = new BillPayloads.AddItemsToBillRequest(List.of(payloadLine));
 
         var snapshot = new MenuItemSnapshotForOrder(menuItemId, new BigDecimal("10.00"), "Item", 0L);
@@ -360,7 +371,7 @@ class BillServiceTest {
         var billMock = mock(Bill.class);
         when(billRepository.findById(any())).thenReturn(Optional.of(billMock));
 
-        var billLine = new BillLine(UUID.randomUUID().toString(), 2, new Money(new BigDecimal("30.00")), "Pizza", 1L);
+        var billLine = new BillLine(UUID.randomUUID().toString(), 2, new Money(new BigDecimal("30.00")), "Pizza");
         when(billMock.getLines()).thenReturn(List.of(billLine));
 
         var expectedResponse = new BillPayloads.BillSummaryWithLinesResponse(

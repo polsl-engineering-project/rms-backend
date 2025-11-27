@@ -25,7 +25,6 @@ CREATE TABLE bill_lines (
                             menu_item_id VARCHAR(255) NOT NULL,
                             quantity INTEGER NOT NULL,
                             unit_price DECIMAL(10, 2) NOT NULL,
-                            menu_item_version BIGINT NOT NULL,
                             CONSTRAINT fk_bill_lines_bill FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
 );
 

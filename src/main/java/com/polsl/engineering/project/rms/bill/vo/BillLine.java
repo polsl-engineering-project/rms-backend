@@ -4,8 +4,7 @@ public record BillLine(
         String menuItemId,
         int quantity,
         Money unitPrice,
-        String menuItemName,
-        long menuItemVersion
+        String menuItemName
 ) {
     public BillLine {
         if (quantity <= 0) {

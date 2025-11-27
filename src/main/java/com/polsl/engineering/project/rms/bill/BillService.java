@@ -4,7 +4,6 @@ import com.polsl.engineering.project.rms.bill.cmd.AddItemsToBillCommand;
 import com.polsl.engineering.project.rms.bill.cmd.RemoveItemsFromBillCommand;
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
 import com.polsl.engineering.project.rms.bill.exception.MenuItemNotFoundException;
-import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
 import com.polsl.engineering.project.rms.bill.vo.*;
 import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
 import com.polsl.engineering.project.rms.general.result.Result;
@@ -91,7 +90,6 @@ class BillService {
                                 menuItemId,
                                 line.quantity(),
                                 line.menuItemName(),
-                                line.menuItemVersion(),
                                 line.unitPrice().amount()
                         );
                     })
@@ -118,7 +116,6 @@ class BillService {
                             menuItemId,
                             line.quantity(),
                             line.menuItemName(),
-                            line.menuItemVersion(),
                             line.unitPrice().amount()
                     );
                 })
@@ -152,16 +149,12 @@ class BillService {
             if (snapshot == null) {
                 throw new MenuItemNotFoundException(lineFromRequest);
             }
-            if (snapshot.version() != lineFromRequest.version()) {
-                throw new MenuItemVersionMismatchException(snapshot.version(), lineFromRequest);
-            }
 
             var billLine = new BillLine(
                     lineFromRequest.menuItemId().toString(),
                     lineFromRequest.quantity(),
                     new Money(snapshot.price()),
-                    snapshot.name(),
-                    snapshot.version()
+                    snapshot.name()
             );
             billLines.add(billLine);
         }

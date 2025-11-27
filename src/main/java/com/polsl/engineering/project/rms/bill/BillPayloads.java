@@ -16,8 +16,7 @@ public class BillPayloads {
 
     public record BillLine(
             @NotNull UUID menuItemId,
-            @Min(1) int quantity,
-            @PositiveOrZero long version
+            @Min(1) int quantity
     ) {
     }
 
@@ -111,7 +110,6 @@ public class BillPayloads {
             UUID menuItemId,
             int quantity,
             String name,
-            long version,
             BigDecimal unitPrice
     ){
     }

@@ -1,7 +1,6 @@
 package com.polsl.engineering.project.rms.general.error_handler;
 
 import com.polsl.engineering.project.rms.bill.exception.InvalidBillActionException;
-import com.polsl.engineering.project.rms.bill.exception.MenuItemVersionMismatchException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -25,17 +24,6 @@ public class ErrorHandler {
         var response = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Invalid bill action",
-                ex.getMessage()
-        );
-
-        return ResponseEntity.badRequest().body(response);
-    }
-
-    @ExceptionHandler(MenuItemVersionMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMenuItemVersionMismatchException(MenuItemVersionMismatchException ex) {
-        var response = ErrorResponse.of(
-                HttpStatus.BAD_REQUEST.value(),
-                "Item version mismatch",
                 ex.getMessage()
         );
 

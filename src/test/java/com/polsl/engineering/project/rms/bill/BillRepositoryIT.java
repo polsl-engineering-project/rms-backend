@@ -147,8 +147,8 @@ class BillRepositoryIT extends ContainersEnvironment {
     void GivenNewBill_WhenSaveNewBill_ThenPersistedInDb() {
         // given
         var lines = List.of(
-                new BillLine("soup", 2, new Money(new BigDecimal("8.00")), "Soup", 1L),
-                new BillLine("bread", 1, new Money(new BigDecimal("3.00")), "Bread", 1L)
+                new BillLine("soup", 2, new Money(new BigDecimal("8.00")), "Soup"),
+                new BillLine("bread", 1, new Money(new BigDecimal("3.00")), "Bread")
         );
         var userId = UUID.randomUUID().toString();
         var cmd = new com.polsl.engineering.project.rms.bill.cmd.OpenBillCommand(
@@ -268,7 +268,7 @@ class BillRepositoryIT extends ContainersEnvironment {
         var originalVersion = bill.getVersion();
         assertThat(originalVersion).isZero();
 
-        var newLines = List.of(new BillLine("tea", 3, new Money(new BigDecimal("5.00")), "Tea", 1L));
+        var newLines = List.of(new BillLine("tea", 3, new Money(new BigDecimal("5.00")), "Tea"));
         var addCmd = new com.polsl.engineering.project.rms.bill.cmd.AddItemsToBillCommand(newLines);
         var addResult = bill.addItems(addCmd, Clock.systemUTC());
         assertThat(addResult.isSuccess()).isTrue();
@@ -307,8 +307,8 @@ class BillRepositoryIT extends ContainersEnvironment {
         var billA = optA.get();
         var billB = optB.get();
 
-        var newLinesA = List.of(new BillLine("item-a", 1, new Money(new BigDecimal("10.00")), "ItemA", 1L));
-        var newLinesB = List.of(new BillLine("item-b", 1, new Money(new BigDecimal("11.00")), "ItemB", 1L));
+        var newLinesA = List.of(new BillLine("item-a", 1, new Money(new BigDecimal("10.00")), "ItemA"));
+        var newLinesB = List.of(new BillLine("item-b", 1, new Money(new BigDecimal("11.00")), "ItemB"));
 
         var addCmdA = new com.polsl.engineering.project.rms.bill.cmd.AddItemsToBillCommand(newLinesA);
         assertThat(billA.addItems(addCmdA, Clock.systemUTC()).isSuccess()).isTrue();

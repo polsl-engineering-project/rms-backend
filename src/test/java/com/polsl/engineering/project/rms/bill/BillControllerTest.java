@@ -75,7 +75,7 @@ class BillControllerTest {
     void GivenExistingBillId_WhenGetBillById_Then200AndBillDetails() throws Exception {
         // given
         var billId = UUID.randomUUID();
-        var billLineResponse = new BillPayloads.BillLineResponse(UUID.randomUUID(), 2, "Pizza", 1L, new BigDecimal("60.00"));
+        var billLineResponse = new BillPayloads.BillLineResponse(UUID.randomUUID(), 2, "Pizza", new BigDecimal("60.00"));
         var expectedResponse = new BillPayloads.BillSummaryWithLinesResponse(
                 billId, 7, BillStatus.OPEN,UUID.randomUUID().toString(), new BigDecimal("60.00"),
                 List.of(billLineResponse), null, null, null
@@ -102,7 +102,7 @@ class BillControllerTest {
     void GivenValidOpenBillRequest_WhenPostOpenBill_Then201AndResponse() throws Exception {
         // given
         var menuItemId = UUID.randomUUID();
-        var billLine = new BillPayloads.BillLine(menuItemId, 2, 1L);
+        var billLine = new BillPayloads.BillLine(menuItemId, 2);
         var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(
                 10,
@@ -139,7 +139,7 @@ class BillControllerTest {
     void GivenInvalidOpenBillRequest_NullTableNumber_WhenPostOpenBill_Then400() throws Exception {
         // given
         var menuItemId = UUID.randomUUID();
-        var billLine = new BillPayloads.BillLine(menuItemId, 1, 0L);
+        var billLine = new BillPayloads.BillLine(menuItemId, 1);
         var waiterInfo = UUID.randomUUID().toString();
         var request = new BillPayloads.OpenBillRequest(
                 null, // invalid
@@ -183,7 +183,7 @@ class BillControllerTest {
         // given
         var billId = UUID.randomUUID().toString();
         var menuItemId = UUID.randomUUID();
-        var billLine = new BillPayloads.BillLine(menuItemId, 3, 1L);
+        var billLine = new BillPayloads.BillLine(menuItemId, 3);
         var request = new BillPayloads.AddItemsToBillRequest(List.of(billLine));
 
         // when
