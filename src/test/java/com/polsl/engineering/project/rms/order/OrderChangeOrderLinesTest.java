@@ -33,7 +33,7 @@ class OrderChangeOrderLinesTest {
         assertThat(placed.isSuccess()).isTrue();
         var order = placed.getValue();
         assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
         return order;
     }
 
@@ -49,7 +49,7 @@ class OrderChangeOrderLinesTest {
         assertThat(placed.isSuccess()).isTrue();
         var order = placed.getValue();
         assertThat(order.approve(new ApproveOrderCommand(null), FIXED_CLOCK).isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
         return order;
     }
 
@@ -96,7 +96,7 @@ class OrderChangeOrderLinesTest {
                         org.assertj.core.groups.Tuple.tuple("pasta", 2, 3L),
                         org.assertj.core.groups.Tuple.tuple("salad", 1, 2L)
                 );
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
     }
 
     @Test
@@ -189,7 +189,7 @@ class OrderChangeOrderLinesTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
         assertThat(order.getEstimatedPreparationMinutes()).isEqualTo(15);
     }
 
@@ -208,7 +208,7 @@ class OrderChangeOrderLinesTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
         assertThat(order.getEstimatedPreparationMinutes()).isEqualTo(17);
     }
 

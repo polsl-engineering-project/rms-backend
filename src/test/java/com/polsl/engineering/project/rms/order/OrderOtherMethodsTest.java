@@ -69,7 +69,7 @@ class OrderOtherMethodsTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
     }
 
     @Test
@@ -83,7 +83,7 @@ class OrderOtherMethodsTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
     }
 
     @Test

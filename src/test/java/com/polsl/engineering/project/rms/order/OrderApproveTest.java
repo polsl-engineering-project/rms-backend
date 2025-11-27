@@ -65,7 +65,7 @@ class OrderApproveTest {
         var result = order.approve(new ApproveOrderCommand(null), FIXED_CLOCK);
 
         assertThat(result.isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
         assertThat(order.getEstimatedPreparationMinutes()).isNull();
 
         var events = order.pullEvents();
@@ -74,7 +74,8 @@ class OrderApproveTest {
         assertThat(evt).isInstanceOf(OrderApprovedEvent.class);
         var approved = (OrderApprovedEvent) evt;
         assertThat(approved.estimatedPreparationMinutes()).isNull();
-        assertThat(approved.approvedAt()).isEqualTo(Instant.now(FIXED_CLOCK));
+        // use OrderEvent.getOccurredAt() for Instant (occurrence time)
+        assertThat(evt.getOccurredAt()).isEqualTo(Instant.now(FIXED_CLOCK));
     }
 
     @Test
@@ -85,7 +86,7 @@ class OrderApproveTest {
         var result = order.approve(new ApproveOrderCommand(15), FIXED_CLOCK);
 
         assertThat(result.isSuccess()).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
         assertThat(order.getEstimatedPreparationMinutes()).isEqualTo(15);
 
         var events = order.pullEvents();
@@ -94,7 +95,8 @@ class OrderApproveTest {
         assertThat(evt).isInstanceOf(OrderApprovedEvent.class);
         var approved = (OrderApprovedEvent) evt;
         assertThat(approved.estimatedPreparationMinutes()).isEqualTo(15);
-        assertThat(approved.approvedAt()).isEqualTo(Instant.now(FIXED_CLOCK));
+        // use OrderEvent.getOccurredAt() for Instant (occurrence time)
+        assertThat(evt.getOccurredAt()).isEqualTo(Instant.now(FIXED_CLOCK));
     }
 
     @Test

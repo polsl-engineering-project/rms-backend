@@ -40,12 +40,16 @@ interface OrderMapper {
     @Mapping(target = "scheduledFor", source = "scheduledFor")
     @Mapping(target = "orderLines", expression = "java(mapLines(order.getLines()))")
     @Mapping(target = "estimatedPreparationTimeMinutes", source = "estimatedPreparationMinutes")
+    @Mapping(target = "approvedAt", source = "approvedAt")
+    @Mapping(target = "deliveryStartedAt", source = "deliveryStartedAt")
     OrderPayloads.OrderDetailsResponse toDetailsResponse(Order order);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "status", expression = "java(mapStatusToCustomerVisible(order.getStatus()))")
     @Mapping(target = "estimatedPreparationMinutes", source = "estimatedPreparationMinutes")
     @Mapping(target = "cancellationReason", source = "cancellationReason")
+    @Mapping(target = "approvedAt", source = "approvedAt")
+    @Mapping(target = "deliveryStartedAt", source = "deliveryStartedAt")
     OrderPayloads.OrderCustomerViewResponse toCustomerViewResponse(Order order);
 
     @SuppressWarnings("unused")
@@ -53,7 +57,7 @@ interface OrderMapper {
         if (status == null) return null;
         return switch (status) {
             case PENDING_APPROVAL, APPROVED_BY_FRONT_DESK -> OrderCustomerVisibleStatus.PENDING_APPROVAL.name();
-            case CONFIRMED -> OrderCustomerVisibleStatus.CONFIRMED.name();
+            case APPROVED -> OrderCustomerVisibleStatus.CONFIRMED.name();
             case READY_FOR_PICKUP, READY_FOR_DRIVER -> OrderCustomerVisibleStatus.READY_FOR_PICKUP.name();
             case IN_DELIVERY -> OrderCustomerVisibleStatus.IN_DELIVERY.name();
             case COMPLETED -> OrderCustomerVisibleStatus.COMPLETED.name();

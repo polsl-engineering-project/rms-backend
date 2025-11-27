@@ -13,6 +13,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,17 +49,6 @@ public class OrderPayloads {
     ) {
     }
 
-    public record AddItemsByStaffRequest(
-            @NotEmpty @Valid List<OrderLine> orderLines,
-            @PositiveOrZero Integer updatedEstimatedMinutes
-    ) {
-    }
-
-    public record  ApproveOrderByKitchenRequest(
-            @PositiveOrZero Integer estimatedPreparationMinutes
-    ) {
-    }
-
     public record  ApproveOrderRequest(
             @PositiveOrZero Integer estimatedPreparationMinutes
     ) {
@@ -90,7 +80,9 @@ public class OrderPayloads {
             DeliveryMode deliveryMode,
             LocalTime scheduledFor,
             List<OrderLine> orderLines,
-            Integer estimatedPreparationTimeMinutes
+            Integer estimatedPreparationTimeMinutes,
+            LocalDateTime approvedAt,
+            LocalDateTime deliveryStartedAt
     ) {
     }
 
@@ -98,7 +90,9 @@ public class OrderPayloads {
             UUID id,
             String status,
             Integer estimatedPreparationMinutes,
-            String cancellationReason
+            String cancellationReason,
+            LocalDateTime approvedAt,
+            LocalDateTime deliveryStartedAt
     ) {
     }
 

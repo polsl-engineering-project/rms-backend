@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Time;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Component
@@ -56,6 +57,15 @@ class OrderDbMapper {
         try {
             Timestamp ts = rs.getTimestamp(column);
             return ts == null ? null : ts.toInstant();
+        } catch (SQLException e) {
+            throw new DataRetrievalFailureException("Failed to map timestamp column '" + column + "' from ResultSet", e);
+        }
+    }
+
+    LocalDateTime mapLocalDateTime(ResultSet rs, String column) {
+        try {
+            Timestamp ts = rs.getTimestamp(column);
+            return ts == null ? null : ts.toLocalDateTime();
         } catch (SQLException e) {
             throw new DataRetrievalFailureException("Failed to map timestamp column '" + column + "' from ResultSet", e);
         }

@@ -12,6 +12,7 @@ import lombok.Getter;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +46,10 @@ class Order {
     private String cancellationReason;
 
     private Instant placedAt;
+
+    private LocalDateTime approvedAt;
+
+    private LocalDateTime deliveryStartedAt;
 
     private Instant updatedAt;
 
@@ -90,6 +95,8 @@ class Order {
             Integer estimatedPreparationMinutes,
             String cancellationReason,
             Instant placedAt,
+            LocalDateTime approvedAt,
+            LocalDateTime deliveryStartedAt,
             Instant updatedAt,
             long version
     ) {
@@ -104,6 +111,8 @@ class Order {
                 estimatedPreparationMinutes,
                 cancellationReason,
                 placedAt,
+                approvedAt,
+                deliveryStartedAt,
                 updatedAt,
                 version
         );
@@ -216,9 +225,9 @@ class Order {
             return Result.failure("Estimated preparation time must be provided and greater than 0 minutes for ASAP orders.");
         }
 
-        status = OrderStatus.CONFIRMED;
+        status = OrderStatus.APPROVED;
         estimatedPreparationMinutes = cmd.estimatedPreparationMinutes();
-
+        approvedAt = LocalDateTime.now(clock);
         updatedAt = Instant.now(clock);
 
         // emit event
@@ -228,7 +237,7 @@ class Order {
     }
 
     Result<Void> markAsReady(Clock clock) {
-        if (status != OrderStatus.CONFIRMED) {
+        if (status != OrderStatus.APPROVED) {
             return Result.failure("Only orders with status CONFIRMED can be marked as ready.");
         }
 
@@ -278,12 +287,12 @@ class Order {
 
         if (status == OrderStatus.READY_FOR_PICKUP ||
                 status == OrderStatus.READY_FOR_DRIVER ||
-                status == OrderStatus.CONFIRMED) {
+                status == OrderStatus.APPROVED) {
             estimatedPreparationMinutes = cmd.updatedEstimatedPreparationTimeMinutes();
         }
 
         if (status == OrderStatus.READY_FOR_DRIVER || status == OrderStatus.READY_FOR_PICKUP) {
-            status = OrderStatus.CONFIRMED;
+            status = OrderStatus.APPROVED;
         }
 
         updatedAt = Instant.now(clock);
@@ -319,6 +328,7 @@ class Order {
         }
 
         status = OrderStatus.IN_DELIVERY;
+        deliveryStartedAt = LocalDateTime.now(clock);
         updatedAt = Instant.now(clock);
 
         // emit event

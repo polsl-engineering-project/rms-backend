@@ -66,7 +66,7 @@ class OrderRepositoryIT extends ContainersEnvironment {
         assertThat(order.getId()).isEqualTo(orderId);
         assertThat(order.getType()).isEqualTo(OrderType.PICKUP);
         assertThat(order.getDeliveryMode()).isEqualTo(DeliveryMode.SCHEDULED);
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.APPROVED);
 
         // customer info
         var customer = order.getCustomerInfo();
@@ -162,6 +162,8 @@ class OrderRepositoryIT extends ContainersEnvironment {
                 order.getEstimatedPreparationMinutes(),
                 order.getCancellationReason(),
                 order.getPlacedAt(),
+                order.getApprovedAt(),
+                order.getDeliveryStartedAt(),
                 order.getUpdatedAt(),
                 order.getVersion()
         );
@@ -203,6 +205,8 @@ class OrderRepositoryIT extends ContainersEnvironment {
                 orderA.getEstimatedPreparationMinutes(),
                 orderA.getCancellationReason(),
                 orderA.getPlacedAt(),
+                orderA.getApprovedAt(),
+                orderA.getDeliveryStartedAt(),
                 orderA.getUpdatedAt(),
                 orderA.getVersion()
         );
@@ -221,6 +225,8 @@ class OrderRepositoryIT extends ContainersEnvironment {
                 orderB.getEstimatedPreparationMinutes(),
                 orderB.getCancellationReason(),
                 orderB.getPlacedAt(),
+                orderB.getApprovedAt(),
+                orderB.getDeliveryStartedAt(),
                 orderB.getUpdatedAt(),
                 orderB.getVersion()
         );
@@ -250,7 +256,7 @@ class OrderRepositoryIT extends ContainersEnvironment {
                 order.getId(),
                 order.getType(),
                 order.getDeliveryMode(),
-                OrderStatus.CONFIRMED,
+                OrderStatus.APPROVED,
                 newLines,
                 order.getDeliveryAddress(),
                 order.getCustomerInfo(),
@@ -258,6 +264,8 @@ class OrderRepositoryIT extends ContainersEnvironment {
                 order.getEstimatedPreparationMinutes(),
                 order.getCancellationReason(),
                 order.getPlacedAt(),
+                order.getApprovedAt(),
+                order.getDeliveryStartedAt(),
                 order.getUpdatedAt(),
                 order.getVersion()
         );
@@ -291,14 +299,14 @@ class OrderRepositoryIT extends ContainersEnvironment {
         var newLinesB = List.of(new OrderLine("burger", 1, new Money(new BigDecimal("11.00")), 1L));
 
         var updatedA = Order.reconstruct(
-                a.getId(), a.getType(), a.getDeliveryMode(), OrderStatus.CONFIRMED, newLinesA,
-                a.getDeliveryAddress(), a.getCustomerInfo(), a.getScheduledFor(), a.getEstimatedPreparationMinutes(), a.getCancellationReason(), a.getPlacedAt(), a.getUpdatedAt(), a.getVersion()
+                a.getId(), a.getType(), a.getDeliveryMode(), OrderStatus.APPROVED, newLinesA,
+                a.getDeliveryAddress(), a.getCustomerInfo(), a.getScheduledFor(), a.getEstimatedPreparationMinutes(), a.getCancellationReason(), a.getPlacedAt(), a.getApprovedAt(), a.getDeliveryStartedAt(), a.getUpdatedAt(), a.getVersion()
         );
         underTest.updateWithLines(updatedA);
 
         var updatedB = Order.reconstruct(
-                b.getId(), b.getType(), b.getDeliveryMode(), OrderStatus.CONFIRMED, newLinesB,
-                b.getDeliveryAddress(), b.getCustomerInfo(), b.getScheduledFor(), b.getEstimatedPreparationMinutes(), b.getCancellationReason(), b.getPlacedAt(), b.getUpdatedAt(), b.getVersion()
+                b.getId(), b.getType(), b.getDeliveryMode(), OrderStatus.APPROVED, newLinesB,
+                b.getDeliveryAddress(), b.getCustomerInfo(), b.getScheduledFor(), b.getEstimatedPreparationMinutes(), b.getCancellationReason(), b.getPlacedAt(), b.getApprovedAt(), b.getDeliveryStartedAt(), b.getUpdatedAt(), b.getVersion()
         );
 
         // then

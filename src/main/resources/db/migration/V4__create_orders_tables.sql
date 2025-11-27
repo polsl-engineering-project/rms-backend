@@ -18,6 +18,9 @@ CREATE TABLE orders (
     estimated_preparation_minutes INTEGER,
     cancellation_reason VARCHAR(1024),
 
+    approved_at TIMESTAMP WITHOUT TIME ZONE,
+    delivery_started_at TIMESTAMP WITHOUT TIME ZONE,
+
     placed_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 

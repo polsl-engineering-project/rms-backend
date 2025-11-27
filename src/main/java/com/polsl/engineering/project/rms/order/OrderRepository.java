@@ -44,10 +44,12 @@ class OrderRepository {
                 scheduled_for,
                 estimated_preparation_minutes,
                 cancellation_reason,
+                approved_at,
+                delivery_started_at,
                 placed_at,
                 updated_at,
                 version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String ORDER_UPDATE_SQL = """
@@ -67,6 +69,8 @@ class OrderRepository {
                 scheduled_for = ?,
                 estimated_preparation_minutes = ?,
                 cancellation_reason = ?,
+                approved_at = ?,
+                delivery_started_at = ?,
                 placed_at = ?,
                 updated_at = ?,
                 version = version + 1
@@ -199,6 +203,9 @@ class OrderRepository {
 
         var cancellationReason = rs.getString("cancellation_reason");
 
+        var approvedAt = dbMapper.mapLocalDateTime(rs, "approved_at");
+        var deliveryStartedAt = dbMapper.mapLocalDateTime(rs, "delivery_started_at");
+
         var placedAt = dbMapper.mapInstant(rs, "placed_at");
         var updatedAt = dbMapper.mapInstant(rs, "updated_at");
 
@@ -218,6 +225,8 @@ class OrderRepository {
                 estimatedPreparationMinutes,
                 cancellationReason,
                 placedAt,
+                approvedAt,
+                deliveryStartedAt,
                 updatedAt,
                 version
         );

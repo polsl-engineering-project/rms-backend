@@ -11,11 +11,11 @@ public record OrderApprovedEvent(
 ) implements OrderEvent {
     @Override
     public OrderEventType getType() {
-        return null;
+        return OrderEventType.APPROVED;
     }
 
     @Override
     public Instant getOccurredAt() {
-        return null;
+        return approvedAt;
     }
 }

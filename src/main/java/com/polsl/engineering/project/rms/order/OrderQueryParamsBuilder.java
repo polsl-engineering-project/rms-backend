@@ -36,6 +36,8 @@ class OrderQueryParamsBuilder {
         var scheduledFor = order.getScheduledFor() == null ? null : Time.valueOf(order.getScheduledFor());
         var placedAt = order.getPlacedAt() == null ? null : Timestamp.from(order.getPlacedAt());
         var updatedAt = order.getUpdatedAt() == null ? null : Timestamp.from(order.getUpdatedAt());
+        var approvedAt = order.getApprovedAt() == null ? null : Timestamp.valueOf(order.getApprovedAt());
+        var deliveryStartedAt = order.getDeliveryStartedAt() == null ? null : Timestamp.valueOf(order.getDeliveryStartedAt());
 
         return new Object[]{
                 order.getType().name(),
@@ -52,6 +54,8 @@ class OrderQueryParamsBuilder {
                 scheduledFor,
                 order.getEstimatedPreparationMinutes(),
                 order.getCancellationReason(),
+                approvedAt,
+                deliveryStartedAt,
                 placedAt,
                 updatedAt
         };

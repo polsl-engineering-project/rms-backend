@@ -15,6 +15,6 @@ public record OrderDeliveryStartedEvent(
 
     @Override
     public Instant getOccurredAt() {
-        return startedAt();
+        return startedAt;
     }
 }
