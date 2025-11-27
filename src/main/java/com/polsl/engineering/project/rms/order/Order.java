@@ -384,7 +384,6 @@ class Order {
     private static Result<List<OrderLine>> removeLines(List<OrderLine> currentLines, List<OrderLineRemoval> orderLineRemovals) {
         var groupedCurrentLines = currentLines.stream()
                 .collect(Collectors.toMap(OrderLine::menuItemId, x -> x));
-        var result = new ArrayList<OrderLine>();
 
         for (var removeLine : orderLineRemovals) {
             var existingLine = groupedCurrentLines.get(removeLine.menuItemId());
@@ -403,11 +402,13 @@ class Order {
                         existingLine.unitPrice(),
                         existingLine.menuItemName()
                 );
-                result.add(updatedLine);
+                groupedCurrentLines.put(removeLine.menuItemId(), updatedLine);
+            } else {
+                groupedCurrentLines.remove(removeLine.menuItemId());
             }
         }
 
-        return Result.ok(result);
+        return Result.ok(new ArrayList<>(groupedCurrentLines.values()));
     }
 
     private void groupOrderLines() {
