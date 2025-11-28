@@ -140,6 +140,16 @@ class OrderController {
         return ResponseEntity.ok(orderService.getOrderForCustomer(id));
     }
 
+    @Operation(summary = "Get order details")
+    @ApiResponse(responseCode = "200", description = "Order details retrieved successfully",
+            content = @Content(schema = @Schema(implementation = OrderPayloads.OrderDetailsResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Order not found",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping("/{id}")
+    ResponseEntity<OrderPayloads.OrderDetailsResponse> getOrderDetails(@PathVariable String id) {
+        return ResponseEntity.ok(orderService.getOrderDetails(id));
+    }
+
     @Operation(summary = "Search and filter orders with pagination")
     @ApiResponse(responseCode = "200", description = "Orders retrieved successfully",
             content = @Content(schema = @Schema(implementation = OrderPayloads.OrderPageResponse.class)))

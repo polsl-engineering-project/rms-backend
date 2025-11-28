@@ -1,6 +1,9 @@
 package com.polsl.engineering.project.rms.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.polsl.engineering.project.rms.order.vo.Address;
+import com.polsl.engineering.project.rms.order.vo.CustomerInfo;
+import com.polsl.engineering.project.rms.order.vo.Money;
 import com.polsl.engineering.project.rms.security.jwt.JwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,10 +15,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.polsl.engineering.project.rms.general.exception.ResourceNotFoundException;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+
 import java.util.List;
 import java.util.UUID;
 
+import static com.polsl.engineering.project.rms.order.vo.DeliveryMode.ASAP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -45,8 +53,8 @@ class OrderControllerTest {
         // given
         var menuItemId = UUID.randomUUID();
         var line = new OrderPayloads.OrderLineRequest(menuItemId, 2);
-        var customerInfo = new com.polsl.engineering.project.rms.order.vo.CustomerInfo("John","Doe","123456789");
-        var req = new OrderPayloads.PlacePickUpOrderRequest(customerInfo, com.polsl.engineering.project.rms.order.vo.DeliveryMode.ASAP, LocalTime.now(), List.of(line));
+        var customerInfo = new CustomerInfo("John","Doe","123456789");
+        var req = new OrderPayloads.PlacePickUpOrderRequest(customerInfo, ASAP, LocalTime.now(), List.of(line));
         var expectedId = UUID.randomUUID();
         var expectedResponse = new OrderPayloads.OrderPlacedResponse(expectedId);
 
@@ -76,9 +84,9 @@ class OrderControllerTest {
         // given
         var menuItemId = UUID.randomUUID();
         var line = new OrderPayloads.OrderLineRequest(menuItemId, 1);
-        var customerInfo = new com.polsl.engineering.project.rms.order.vo.CustomerInfo("Jane","Roe","987654321");
-        var address = new com.polsl.engineering.project.rms.order.vo.Address("Main St","1", null, "City","00-001");
-        var req = new OrderPayloads.PlaceDeliveryOrderRequest(customerInfo, address, com.polsl.engineering.project.rms.order.vo.DeliveryMode.ASAP, LocalTime.now(), List.of(line));
+        var customerInfo = new CustomerInfo("Jane","Roe","987654321");
+        var address = new Address("Main St","1", null, "City","00-001");
+        var req = new OrderPayloads.PlaceDeliveryOrderRequest(customerInfo, address, ASAP, LocalTime.now(), List.of(line));
         var expectedId = UUID.randomUUID();
         var expectedResponse = new OrderPayloads.OrderPlacedResponse(expectedId);
 
@@ -201,6 +209,57 @@ class OrderControllerTest {
         ArgumentCaptor<OrderPayloads.ChangeOrderLinesRequest> captor = ArgumentCaptor.forClass(OrderPayloads.ChangeOrderLinesRequest.class);
         verify(orderService).changeOrderLines(eq(id), captor.capture());
         assertThat(captor.getValue().updatedEstimatedPreparationTimeMinutes()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("Given existing order_When GET /api/v1/orders/{id}_Then 200 and details body")
+    void GivenExistingOrder_WhenGetOrderDetails_Then200AndBody() throws Exception {
+        // given
+        var id = UUID.randomUUID().toString();
+        var customerInfo = new CustomerInfo("Anna","Lee","123");
+        var address = new Address("St","2",null,"City","00-000");
+        var lineResp = new OrderPayloads.OrderLineResponse(UUID.randomUUID(), 1, Money.zero(), "item");
+        var details = new OrderPayloads.OrderDetailsResponse(
+                UUID.fromString(id),
+                "APPROVED",
+                customerInfo,
+                address,
+                ASAP,
+                LocalTime.of(12,0),
+                List.of(lineResp),
+                10,
+                LocalDateTime.now().minusMinutes(5),
+                null,
+                Instant.now()
+        );
+
+        when(orderService.getOrderDetails(eq(id))).thenReturn(details);
+
+        // when
+        var result = mockMvc.perform(get("/api/v1/orders/" + id));
+
+        // then
+        result.andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(id));
+
+        verify(orderService).getOrderDetails(eq(id));
+        verifyNoMoreInteractions(orderService);
+    }
+
+    @Test
+    @DisplayName("Given missing order_When GET /api/v1/orders/{id}_Then 404")
+    void GivenMissingOrder_WhenGetOrderDetails_Then404() throws Exception {
+        // given
+        var id = UUID.randomUUID().toString();
+        when(orderService.getOrderDetails(eq(id))).thenThrow(new ResourceNotFoundException("Order not found"));
+
+        // when
+        var result = mockMvc.perform(get("/api/v1/orders/" + id));
+
+        // then
+        result.andExpect(status().isNotFound());
+        verify(orderService).getOrderDetails(eq(id));
     }
 
 }

@@ -155,6 +155,10 @@ class OrderService {
         return mapper.toCustomerViewResponse(findByIdOrThrow(orderId));
     }
 
+    OrderPayloads.OrderDetailsResponse getOrderDetails(String orderId) {
+        return mapper.toDetailsResponse(findByIdOrThrow(orderId));
+    }
+
     private Order findByIdOrThrow(String id) {
         return jdbcRepository.findById(OrderId.from(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Order with id %s not found".formatted(id)));
