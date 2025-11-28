@@ -61,6 +61,7 @@ interface OrderMapper {
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "status", expression = "java(mapStatusToCustomerVisible(order.getStatus()))")
+    @Mapping(target = "orderType", source = "type")
     @Mapping(target = "estimatedPreparationMinutes", source = "estimatedPreparationMinutes")
     @Mapping(target = "cancellationReason", source = "cancellationReason")
     OrderPayloads.OrderCustomerViewResponse toCustomerViewResponse(Order order);
